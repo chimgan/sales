@@ -1,0 +1,27 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Image gallery styles */
+.image-gallery-slide img {
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.image-gallery-thumbnail.active {
+  border-color: #0277bd;
+}
