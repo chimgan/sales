@@ -46,19 +46,7 @@ git push -u origin main
 
 In Netlify Dashboard → Site Settings → Environment Variables, add:
 
-```
-VITE_FIREBASE_API_KEY=AIzaSyCe85dmKohxWomjcw-eJvz6Rb_KfafkYBc
-VITE_FIREBASE_AUTH_DOMAIN=tece-sales.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=tece-sales
-VITE_FIREBASE_STORAGE_BUCKET=tece-sales.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=541659858259
-VITE_FIREBASE_APP_ID=1:541659858259:web:bc6e66fbc327fa8c698da6
-VITE_FIREBASE_MEASUREMENT_ID=G-ENLHWSB1WZ
-VITE_CLOUDINARY_CLOUD_NAME=dgc88pe9a
-VITE_CLOUDINARY_UPLOAD_PRESET=sales-unsigned
-VITE_ADMIN_EMAIL=kovtunovvladislav@gmail.com
-VITE_ADMIN_PASSWORD=your-secure-password-here
-```
+
 
 ⚠️ **Important:** Change `VITE_ADMIN_PASSWORD` to a secure password for production!
 
