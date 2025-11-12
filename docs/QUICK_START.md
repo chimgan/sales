@@ -30,7 +30,7 @@ docker-compose up
 
 - **Frontend:** http://localhost:5173
 - **Admin Panel:** http://localhost:5173/admin/login
-  - Email: `kovtunovvladislav@gmail.com`
+  - Email: `your-admin@example.com`
   - Password: `password`
 
 ---
@@ -143,7 +143,7 @@ docker-compose up --build
 
 ## 📞 Need Help?
 
-**Email:** kovtunovvladislav@gmail.com
+**Email:** your-admin@example.com
 
 **Key Files:**
 - `.env` - Your credentials (create from .env.example)

@@ -70,7 +70,7 @@ VITE_CLOUDINARY_UPLOAD_PRESET=tece-marketplace
 
 ### Default Values (Change in Production!):
 ```env
-VITE_ADMIN_EMAIL=kovtunovvladislav@gmail.com
+VITE_ADMIN_EMAIL=your-admin@example.com
 VITE_ADMIN_PASSWORD=password
 ```
 
@@ -150,4 +150,4 @@ Before running the application:
 - [Upload Preset Guide](https://cloudinary.com/documentation/upload_presets)
 
 ### General Questions:
-- Contact: kovtunovvladislav@gmail.com
+- Contact: your-admin@example.com

@@ -70,20 +70,20 @@ You'll need to add these in Netlify Dashboard → Site Settings → Environment 
 
 ```bash
 # Firebase
-VITE_FIREBASE_API_KEY=AIzaSyCe85dmKohxWomjcw-eJvz6Rb_KfafkYBc
-VITE_FIREBASE_AUTH_DOMAIN=tece-sales.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=tece-sales
-VITE_FIREBASE_STORAGE_BUCKET=tece-sales.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=541659858259
-VITE_FIREBASE_APP_ID=1:541659858259:web:bc6e66fbc327fa8c698da6
-VITE_FIREBASE_MEASUREMENT_ID=G-ENLHWSB1WZ
+VITE_FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=YOUR_SENDER_ID
+VITE_FIREBASE_APP_ID=1:YOUR_SENDER_ID:web:bc6e66fbc327fa8c698da6
+VITE_FIREBASE_MEASUREMENT_ID=YOUR_MEASUREMENT_ID
 
 # Cloudinary
-VITE_CLOUDINARY_CLOUD_NAME=dgc88pe9a
-VITE_CLOUDINARY_UPLOAD_PRESET=sales-unsigned
+VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name
+VITE_CLOUDINARY_UPLOAD_PRESET=your-upload-preset
 
 # Admin
-VITE_ADMIN_EMAIL=kovtunovvladislav@gmail.com
+VITE_ADMIN_EMAIL=your-admin@example.com
 VITE_ADMIN_PASSWORD=CHANGE-THIS-IN-PRODUCTION
 ```
 
@@ -258,4 +258,4 @@ All checks passed! Follow the deployment steps above to go live.
 - `SETUP_GUIDE.md` - Local development setup
 - `README.md` - Project overview
 
-**Questions?** Contact: kovtunovvladislav@gmail.com
+**Questions?** Contact: your-admin@example.com

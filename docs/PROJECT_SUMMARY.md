@@ -295,8 +295,8 @@ The admin dashboard tracks:
 
 ## 📞 Support & Contact
 
-- **Email:** kovtunovvladislav@gmail.com
-- **Admin Login:** kovtunovvladislav@gmail.com / password
+- **Email:** your-admin@example.com
+- **Admin Login:** your-admin@example.com / password
 
 ## 📝 License
 

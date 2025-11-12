@@ -96,7 +96,7 @@ VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name
 VITE_CLOUDINARY_UPLOAD_PRESET=tece-marketplace
 
 # Admin Credentials
-VITE_ADMIN_EMAIL=kovtunovvladislav@gmail.com
+VITE_ADMIN_EMAIL=your-admin@example.com
 VITE_ADMIN_PASSWORD=password
 ```
 
@@ -136,7 +136,7 @@ After starting the application:
 
 1. **Log in as Admin**
    - Go to http://localhost:5173/admin/login
-   - Email: `kovtunovvladislav@gmail.com`
+   - Email: `your-admin@example.com`
    - Password: `password`
 
 2. **Create Categories**
@@ -296,4 +296,4 @@ Before deploying to production:
 If you encounter any issues:
 1. Check the troubleshooting section
 2. Review Firebase/Cloudinary documentation
-3. Contact: kovtunovvladislav@gmail.com
+3. Contact: your-admin@example.com
