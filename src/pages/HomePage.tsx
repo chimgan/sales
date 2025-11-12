@@ -13,13 +13,18 @@ import {
   MenuItem,
   Box,
   CircularProgress,
+  Paper,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { collection, query, getDocs, orderBy, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Item, Category, Tag } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import AuthDialog from '../components/AuthDialog';
+import LoginIcon from '@mui/icons-material/Login';
 
 const HomePage = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -27,9 +32,16 @@ const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAuthDialog = () => setAuthDialogOpen(true);
+    window.addEventListener('openAuthDialog', handleOpenAuthDialog);
+    return () => window.removeEventListener('openAuthDialog', handleOpenAuthDialog);
   }, []);
 
   const fetchData = async () => {
@@ -120,6 +132,35 @@ const HomePage = () => {
         <Typography variant="h6" color="text.secondary" gutterBottom>
           Discover great deals on home goods, auto, and more
         </Typography>
+
+        {!user && (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mt: 3,
+              mb: 3,
+              bgcolor: 'primary.light',
+              color: 'primary.contrastText',
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              👋 New here? Sign in to get started!
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Sign in with Google or create an account to submit inquiries, save favorites, and manage your profile.
+            </Typography>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setAuthDialogOpen(true)}
+              startIcon={<LoginIcon />}
+            >
+              Sign In / Sign Up
+            </Button>
+          </Paper>
+        )}
       </Box>
 
       {/* Filters */}
@@ -239,6 +280,9 @@ const HomePage = () => {
           ))}
         </Grid>
       )}
+
+      {/* Auth Dialog */}
+      <AuthDialog open={authDialogOpen} onClose={() => setAuthDialogOpen(false)} />
     </Container>
   );
 };
