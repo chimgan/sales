@@ -11,6 +11,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { Item, Inquiry } from '../../types';
 import { useSnackbar } from 'notistack';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   BarChart,
   Bar,
@@ -27,6 +28,7 @@ import {
 
 const AnalyticsDashboard = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Item[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
@@ -61,7 +63,7 @@ const AnalyticsDashboard = () => {
       );
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      enqueueSnackbar('Error loading analytics', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorLoadingData, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -78,9 +80,9 @@ const AnalyticsDashboard = () => {
 
   // Status distribution data
   const statusData = [
-    { name: 'On Sale', value: onSaleItems, color: '#4caf50' },
-    { name: 'Reserved', value: reservedItems, color: '#ff9800' },
-    { name: 'Sold', value: soldItems, color: '#f44336' },
+    { name: t.status.onSale, value: onSaleItems, color: '#4caf50' },
+    { name: t.status.reserved, value: reservedItems, color: '#ff9800' },
+    { name: t.status.sold, value: soldItems, color: '#f44336' },
   ];
 
   // Category distribution
@@ -114,7 +116,7 @@ const AnalyticsDashboard = () => {
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
-        Analytics Dashboard
+        {t.admin.analyticsDashboard}
       </Typography>
 
       {/* Summary Cards */}
@@ -123,7 +125,7 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
-                Total Items
+                {t.admin.totalItems}
               </Typography>
               <Typography variant="h3">{totalItems}</Typography>
             </CardContent>
@@ -133,7 +135,7 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
-                Items On Sale
+                {t.admin.itemsOnSale}
               </Typography>
               <Typography variant="h3" color="success.main">
                 {onSaleItems}
@@ -145,11 +147,11 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
-                Total Inquiries
+                {t.admin.totalInquiries}
               </Typography>
               <Typography variant="h3">{totalInquiries}</Typography>
               <Typography variant="caption" color="error.main">
-                {newInquiries} new
+                {newInquiries} {t.admin.newInquiries}
               </Typography>
             </CardContent>
           </Card>
@@ -158,7 +160,7 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
-                Total Views
+                {t.admin.totalViews}
               </Typography>
               <Typography variant="h3">{totalViews}</Typography>
             </CardContent>
@@ -172,7 +174,7 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Item Status Distribution
+                {t.admin.itemStatusDistribution}
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -201,7 +203,7 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Items by Category
+                {t.admin.itemsByCategory}
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={categoryData}>
@@ -210,7 +212,7 @@ const AnalyticsDashboard = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="value" fill="#0277BD" name="Items" />
+                  <Bar dataKey="value" fill="#0277BD" name={t.admin.items} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -221,7 +223,7 @@ const AnalyticsDashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Top 5 Most Viewed Items
+                {t.admin.topViewedItems}
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topViewedItems} layout="vertical">
@@ -230,7 +232,7 @@ const AnalyticsDashboard = () => {
                   <YAxis dataKey="name" type="category" width={150} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="views" fill="#F9A03F" name="Views" />
+                  <Bar dataKey="views" fill="#F9A03F" name={t.admin.views} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

@@ -23,9 +23,11 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import { db } from '../../config/firebase';
 import { Tag } from '../../types';
 import { useSnackbar } from 'notistack';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const TagsManager = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useLanguage();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,7 +50,7 @@ const TagsManager = () => {
       );
     } catch (error) {
       console.error('Error fetching tags:', error);
-      enqueueSnackbar('Error loading tags', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorLoadingData, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ const TagsManager = () => {
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.slug) {
-      enqueueSnackbar('Please fill in all fields', { variant: 'warning' });
+      enqueueSnackbar(t.admin.fillAllFields || 'Please fill in all fields', { variant: 'warning' });
       return;
     }
 
@@ -97,17 +99,17 @@ const TagsManager = () => {
 
       if (editingTag) {
         await updateDoc(doc(db, 'tags', editingTag.id), tagData);
-        enqueueSnackbar('Tag updated successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.tagUpdated, { variant: 'success' });
       } else {
         await addDoc(collection(db, 'tags'), tagData);
-        enqueueSnackbar('Tag created successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.tagAdded, { variant: 'success' });
       }
 
       await fetchTags();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving tag:', error);
-      enqueueSnackbar('Error saving tag', { variant: 'error' });
+      enqueueSnackbar(t.common.error, { variant: 'error' });
     }
   };
 
@@ -116,11 +118,11 @@ const TagsManager = () => {
 
     try {
       await deleteDoc(doc(db, 'tags', id));
-      enqueueSnackbar('Tag deleted successfully', { variant: 'success' });
+      enqueueSnackbar(t.admin.tagDeleted, { variant: 'success' });
       await fetchTags();
     } catch (error) {
       console.error('Error deleting tag:', error);
-      enqueueSnackbar('Error deleting tag', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorDeleting, { variant: 'error' });
     }
   };
 
@@ -135,9 +137,9 @@ const TagsManager = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Manage Tags</Typography>
+        <Typography variant="h4">{t.admin.manageTags}</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
-          Add Tag
+          {t.admin.addTag}
         </Button>
       </Box>
 
@@ -145,9 +147,9 @@ const TagsManager = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Slug</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{t.admin.name}</TableCell>
+              <TableCell>{t.admin.slug}</TableCell>
+              <TableCell>{t.admin.actions}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -171,22 +173,22 @@ const TagsManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingTag ? 'Edit Tag' : 'Add New Tag'}</DialogTitle>
+        <DialogTitle>{editingTag ? t.admin.editTag : t.admin.addTag}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField
-              label="Name"
+              label={t.admin.name}
               fullWidth
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
             />
-            <TextField label="Slug" fullWidth value={formData.slug} disabled />
+            <TextField label={t.admin.slug} fullWidth value={formData.slug} disabled />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t.admin.cancel}</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {editingTag ? 'Update' : 'Create'}
+            {editingTag ? t.admin.update : t.admin.create}
           </Button>
         </DialogActions>
       </Dialog>

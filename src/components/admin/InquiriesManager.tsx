@@ -20,8 +20,10 @@ import { db } from '../../config/firebase';
 import { Inquiry } from '../../types';
 import { useSnackbar } from 'notistack';
 import { format } from 'date-fns';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const InquiriesManager = () => {
+  const { t } = useLanguage();
   const { enqueueSnackbar } = useSnackbar();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,27 +89,27 @@ const InquiriesManager = () => {
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
-        Customer Inquiries
+        {t.admin.customerInquiries}
       </Typography>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Date</TableCell>
-              <TableCell>Item ID</TableCell>
-              <TableCell>Customer Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Message</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell>{t.admin.date}</TableCell>
+              <TableCell>{t.admin.itemId}</TableCell>
+              <TableCell>{t.admin.customerName}</TableCell>
+              <TableCell>{t.admin.userEmail}</TableCell>
+              <TableCell>{t.admin.userPhone}</TableCell>
+              <TableCell>{t.admin.message}</TableCell>
+              <TableCell>{t.admin.status}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {inquiries.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align="center">
-                  <Typography color="text.secondary">No inquiries yet</Typography>
+                  <Typography color="text.secondary">{t.admin.noInquiriesYet}</Typography>
                 </TableCell>
               </TableRow>
             ) : (
@@ -133,13 +135,13 @@ const InquiriesManager = () => {
                       sx={{ minWidth: 120 }}
                     >
                       <MenuItem value="new">
-                        <Chip label="New" color="primary" size="small" />
+                        <Chip label={t.admin.new} color="primary" size="small" />
                       </MenuItem>
                       <MenuItem value="contacted">
-                        <Chip label="Contacted" color="warning" size="small" />
+                        <Chip label={t.admin.contacted} color="warning" size="small" />
                       </MenuItem>
                       <MenuItem value="closed">
-                        <Chip label="Closed" color="default" size="small" />
+                        <Chip label={t.admin.closed} color="default" size="small" />
                       </MenuItem>
                     </Select>
                   </TableCell>

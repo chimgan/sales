@@ -32,9 +32,11 @@ import { db } from '../../config/firebase';
 import { Item, Category, Tag, ItemStatus } from '../../types';
 import { useSnackbar } from 'notistack';
 import { uploadMultipleToCloudinary } from '../../utils/cloudinary';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const ItemsManager = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -93,7 +95,7 @@ const ItemsManager = () => {
       );
     } catch (error) {
       console.error('Error fetching data:', error);
-      enqueueSnackbar('Error loading data', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorLoadingData, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -176,20 +178,20 @@ const ItemsManager = () => {
 
       if (editingItem) {
         await updateDoc(doc(db, 'items', editingItem.id), itemData);
-        enqueueSnackbar('Item updated successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.itemUpdated, { variant: 'success' });
       } else {
         await addDoc(collection(db, 'items'), {
           ...itemData,
           createdAt: new Date(),
         });
-        enqueueSnackbar('Item created successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.itemAdded, { variant: 'success' });
       }
 
       await fetchData();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving item:', error);
-      enqueueSnackbar('Error saving item', { variant: 'error' });
+      enqueueSnackbar(t.common.error, { variant: 'error' });
     } finally {
       setUploading(false);
     }
@@ -200,11 +202,11 @@ const ItemsManager = () => {
 
     try {
       await deleteDoc(doc(db, 'items', id));
-      enqueueSnackbar('Item deleted successfully', { variant: 'success' });
+      enqueueSnackbar(t.admin.itemDeleted, { variant: 'success' });
       await fetchData();
     } catch (error) {
       console.error('Error deleting item:', error);
-      enqueueSnackbar('Error deleting item', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorDeleting, { variant: 'error' });
     }
   };
 
@@ -226,9 +228,9 @@ const ItemsManager = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Manage Items</Typography>
+        <Typography variant="h4">{t.admin.manageItems}</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
-          Add Item
+          {t.admin.addItem}
         </Button>
       </Box>
 
@@ -236,13 +238,13 @@ const ItemsManager = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Image</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Views</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{t.admin.image}</TableCell>
+              <TableCell>{t.admin.title}</TableCell>
+              <TableCell>{t.admin.price}</TableCell>
+              <TableCell>{t.admin.category}</TableCell>
+              <TableCell>{t.admin.status}</TableCell>
+              <TableCell>{t.admin.views}</TableCell>
+              <TableCell>{t.admin.actions}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -289,12 +291,12 @@ const ItemsManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
+        <DialogTitle>{editingItem ? t.admin.editItem : t.admin.addNewItem}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Title *"
+                label={`${t.admin.title} ${t.admin.required}`}
                 fullWidth
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -302,7 +304,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Description"
+                label={t.admin.description}
                 fullWidth
                 multiline
                 rows={4}
@@ -312,7 +314,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Price *"
+                label={`${t.admin.price} ${t.admin.required}`}
                 fullWidth
                 type="number"
                 value={formData.price}
@@ -321,7 +323,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Discount Price"
+                label={t.admin.discountPrice}
                 fullWidth
                 type="number"
                 value={formData.discountPrice}
@@ -330,7 +332,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Category *"
+                label={`${t.admin.category} ${t.admin.required}`}
                 fullWidth
                 select
                 value={formData.category}
@@ -345,27 +347,27 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Status"
+                label={t.admin.status}
                 fullWidth
                 select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as ItemStatus })}
               >
-                <MenuItem value="on_sale">On Sale</MenuItem>
-                <MenuItem value="reserved">Reserved</MenuItem>
-                <MenuItem value="sold">Sold</MenuItem>
+                <MenuItem value="on_sale">{t.status.onSale}</MenuItem>
+                <MenuItem value="reserved">{t.status.reserved}</MenuItem>
+                <MenuItem value="sold">{t.status.sold}</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Tags</InputLabel>
+                <InputLabel>{t.admin.tags}</InputLabel>
                 <Select
                   multiple
                   value={formData.tags}
                   onChange={(e: SelectChangeEvent<string[]>) =>
                     setFormData({ ...formData, tags: e.target.value as string[] })
                   }
-                  input={<OutlinedInput label="Tags" />}
+                  input={<OutlinedInput label={t.admin.tags} />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
@@ -384,19 +386,19 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={12}>
               <Button variant="outlined" component="label" fullWidth>
-                Upload Images
+                {t.admin.uploadImages}
                 <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
               </Button>
               {imageFiles.length > 0 && (
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  {imageFiles.length} file(s) selected
+                  {imageFiles.length} {t.admin.filesSelected}
                 </Typography>
               )}
             </Grid>
             {formData.images.length > 0 && (
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Current Images
+                  {t.admin.currentImages}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {formData.images.map((img, idx) => (
@@ -428,9 +430,9 @@ const ItemsManager = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t.admin.cancel}</Button>
           <Button onClick={handleSubmit} variant="contained" disabled={uploading}>
-            {uploading ? <CircularProgress size={24} /> : editingItem ? 'Update' : 'Create'}
+            {uploading ? <CircularProgress size={24} /> : editingItem ? t.admin.update : t.admin.create}
           </Button>
         </DialogActions>
       </Dialog>

@@ -66,12 +66,12 @@ const ItemDetailPage = () => {
           views: increment(1),
         });
       } else {
-        enqueueSnackbar('Item not found', { variant: 'error' });
+        enqueueSnackbar(t.itemDetail.itemNotFound, { variant: 'error' });
         navigate('/');
       }
     } catch (error) {
       console.error('Error fetching item:', error);
-      enqueueSnackbar('Error loading item', { variant: 'error' });
+      enqueueSnackbar(t.itemDetail.errorLoadingItem, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -79,34 +79,44 @@ const ItemDetailPage = () => {
 
   const handleInquirySubmit = async () => {
     if (!inquiryForm.name || !inquiryForm.comment) {
-      enqueueSnackbar('Please fill in required fields', { variant: 'warning' });
+      enqueueSnackbar(t.itemDetail.fillRequiredFields, { variant: 'warning' });
       return;
     }
 
     if (!inquiryForm.email && !inquiryForm.phone) {
-      enqueueSnackbar('Please provide email or phone number', { variant: 'warning' });
+      enqueueSnackbar(t.itemDetail.provideEmailOrPhone, { variant: 'warning' });
       return;
     }
 
     try {
-      const inquiry: Omit<Inquiry, 'id'> = {
+      const inquiry: any = {
         itemId: id!,
-        userId: user?.uid,
         userName: inquiryForm.name,
-        userEmail: inquiryForm.email || undefined,
-        userPhone: inquiryForm.phone || undefined,
         comment: inquiryForm.comment,
         createdAt: new Date(),
         status: 'new',
       };
 
+      // Only add optional fields if they have values
+      if (user?.uid) {
+        inquiry.userId = user.uid;
+      }
+      if (inquiryForm.email) {
+        inquiry.userEmail = inquiryForm.email;
+      }
+      if (inquiryForm.phone) {
+        inquiry.userPhone = inquiryForm.phone;
+      }
+
+      console.log('Submitting inquiry:', inquiry);
       await addDoc(collection(db, 'inquiries'), inquiry);
-      enqueueSnackbar('Inquiry sent successfully!', { variant: 'success' });
+      enqueueSnackbar(t.itemDetail.inquirySentSuccess, { variant: 'success' });
       setInquiryDialogOpen(false);
       setInquiryForm({ name: '', email: '', phone: '', comment: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting inquiry:', error);
-      enqueueSnackbar('Error sending inquiry', { variant: 'error' });
+      console.error('Error details:', error.message, error.code);
+      enqueueSnackbar(t.itemDetail.errorSendingInquiry, { variant: 'error' });
     }
   };
 
@@ -116,7 +126,7 @@ const ItemDetailPage = () => {
         await signInWithGoogle();
         setInquiryDialogOpen(true);
       } catch (error) {
-        enqueueSnackbar('Sign in required to make inquiries', { variant: 'info' });
+        enqueueSnackbar(t.itemDetail.signInRequired, { variant: 'info' });
       }
     } else {
       setInquiryForm({
