@@ -108,6 +108,12 @@ export const ru = {
     close: 'Закрыть',
     search: 'Поиск',
   },
+
+  // Footer
+  footer: {
+    copyright: 'Все права защищены',
+    tagline: 'Покупайте и продавайте товары для дома, авто и многое другое с уверенностью',
+  },
 };
 
 export type TranslationKeys = typeof ru;

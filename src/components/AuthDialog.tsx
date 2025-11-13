@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AuthDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface AuthDialogProps {
 
 const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { t } = useLanguage();
   const [tabValue, setTabValue] = useState(0); // 0 = Sign In, 1 = Sign Up
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +47,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
 
   const handleEmailSignIn = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError(t.auth.fillAllFields);
       return;
     }
     try {
@@ -62,11 +64,11 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
 
   const handleEmailSignUp = async () => {
     if (!email || !password || !displayName) {
-      setError('Please fill in all fields');
+      setError(t.auth.fillAllFields);
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t.auth.passwordTooShort);
       return;
     }
     try {
@@ -94,8 +96,8 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} centered>
-          <Tab label="Sign In" />
-          <Tab label="Sign Up" />
+          <Tab label={t.auth.signIn} />
+          <Tab label={t.auth.signUp} />
         </Tabs>
       </DialogTitle>
       <DialogContent>
@@ -114,12 +116,12 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
           disabled={loading}
           sx={{ mb: 2 }}
         >
-          Continue with Google
+          {t.auth.continueWithGoogle}
         </Button>
 
         <Divider sx={{ my: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            OR
+            {t.auth.or}
           </Typography>
         </Divider>
 
@@ -127,7 +129,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
         <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {tabValue === 1 && (
             <TextField
-              label="Display Name"
+              label={t.auth.displayName}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               fullWidth
@@ -136,7 +138,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             />
           )}
           <TextField
-            label="Email"
+            label={t.auth.email}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -145,33 +147,31 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             disabled={loading}
           />
           <TextField
-            label="Password"
+            label={t.auth.password}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             fullWidth
             required
             disabled={loading}
-            helperText={tabValue === 1 ? 'Minimum 6 characters' : ''}
+            helperText={tabValue === 1 ? t.auth.passwordHint : ''}
           />
         </Box>
 
         <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-          {tabValue === 0
-            ? "Don't have an account? Switch to Sign Up tab"
-            : 'Already have an account? Switch to Sign In tab'}
+          {tabValue === 0 ? t.auth.noAccount : t.auth.haveAccount}
         </Typography>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>
-          Cancel
+          {t.auth.cancel}
         </Button>
         <Button
           onClick={tabValue === 0 ? handleEmailSignIn : handleEmailSignUp}
           variant="contained"
           disabled={loading}
         >
-          {tabValue === 0 ? 'Sign In' : 'Sign Up'}
+          {tabValue === 0 ? t.auth.signIn : t.auth.signUp}
         </Button>
       </DialogActions>
     </Dialog>

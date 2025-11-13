@@ -110,4 +110,10 @@ export const en: TranslationKeys = {
     close: 'Close',
     search: 'Search',
   },
+
+  // Footer
+  footer: {
+    copyright: 'All rights reserved',
+    tagline: 'Buy and sell home goods, auto, and more with confidence',
+  },
 };

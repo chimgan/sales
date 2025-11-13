@@ -20,11 +20,13 @@ import { collection, query, getDocs, orderBy, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Item, Category, Tag } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import AuthDialog from '../components/AuthDialog';
 import LoginIcon from '@mui/icons-material/Login';
 
 const HomePage = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -127,10 +129,10 @@ const HomePage = () => {
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom fontWeight={700}>
-          Welcome to Tece Marketplace
+          {t.home.title}
         </Typography>
         <Typography variant="h6" color="text.secondary" gutterBottom>
-          Discover great deals on home goods, auto, and more
+          {t.home.subtitle}
         </Typography>
 
         {!user && (
@@ -146,10 +148,10 @@ const HomePage = () => {
             }}
           >
             <Typography variant="h6" gutterBottom>
-              👋 New here? Sign in to get started!
+              {t.home.welcomeTitle}
             </Typography>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              Sign in with Google or create an account to submit inquiries, save favorites, and manage your profile.
+              {t.home.welcomeText}
             </Typography>
             <Button
               variant="contained"
@@ -157,7 +159,7 @@ const HomePage = () => {
               onClick={() => setAuthDialogOpen(true)}
               startIcon={<LoginIcon />}
             >
-              Sign In / Sign Up
+              {t.home.signInSignUp}
             </Button>
           </Paper>
         )}
@@ -168,23 +170,22 @@ const HomePage = () => {
         <Grid item xs={12} md={4}>
           <TextField
             fullWidth
-            label="Search items"
+            label={t.home.searchItems}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            variant="outlined"
           />
         </Grid>
         <Grid item xs={12} md={4}>
           <TextField
-            fullWidth
             select
-            label="Category"
+            fullWidth
+            label={t.home.category}
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            <MenuItem value="all">All Categories</MenuItem>
+            <MenuItem value="all">{t.home.allCategories}</MenuItem>
             {categories.map((cat) => (
-              <MenuItem key={cat.id} value={cat.slug}>
+              <MenuItem key={cat.id} value={cat.id}>
                 {cat.name}
               </MenuItem>
             ))}
@@ -192,16 +193,16 @@ const HomePage = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <TextField
-            fullWidth
             select
-            label="Status"
+            fullWidth
+            label={t.home.status}
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
           >
-            <MenuItem value="all">All Statuses</MenuItem>
-            <MenuItem value="on_sale">On Sale</MenuItem>
-            <MenuItem value="reserved">Reserved</MenuItem>
-            <MenuItem value="sold">Sold</MenuItem>
+            <MenuItem value="all">{t.home.allStatuses}</MenuItem>
+            <MenuItem value="on_sale">{t.status.onSale}</MenuItem>
+            <MenuItem value="reserved">{t.status.reserved}</MenuItem>
+            <MenuItem value="sold">{t.status.sold}</MenuItem>
           </TextField>
         </Grid>
       </Grid>
@@ -209,11 +210,11 @@ const HomePage = () => {
       {/* Items Grid */}
       {filteredItems.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h5" color="text.secondary">
-            No items found
+          <Typography variant="h5" gutterBottom>
+            {t.home.noItemsFound}
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-            {items.length === 0 ? 'Check back later for new items!' : 'Try adjusting your filters'}
+          <Typography variant="body1" color="text.secondary">
+            {items.length === 0 ? t.home.checkBackLater : t.home.noItemsText}
           </Typography>
         </Box>
       ) : (
@@ -266,13 +267,12 @@ const HomePage = () => {
                 </CardContent>
                 <CardActions>
                   <Button
-                    size="small"
+                    variant="outlined"
                     component={Link}
                     to={`/item/${item.id}`}
-                    variant="contained"
                     fullWidth
                   >
-                    View Details
+                    {t.home.viewDetails}
                   </Button>
                 </CardActions>
               </Card>
