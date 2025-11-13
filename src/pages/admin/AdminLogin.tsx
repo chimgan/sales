@@ -11,11 +11,13 @@ import {
   Alert,
 } from '@mui/material';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { isAdminAuthenticated, login } = useAdminAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -34,7 +36,7 @@ const AdminLogin = () => {
     if (success) {
       navigate('/admin');
     } else {
-      setError('Invalid email or password');
+      setError(t.admin.invalidCredentials);
     }
   };
 
@@ -45,10 +47,7 @@ const AdminLogin = () => {
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <AdminPanelSettingsIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
             <Typography variant="h4" gutterBottom>
-              Admin Login
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Sign in to access the admin dashboard
+              {t.admin.login}
             </Typography>
           </Box>
 
@@ -61,7 +60,7 @@ const AdminLogin = () => {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Email"
+              label={t.admin.email}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -70,7 +69,7 @@ const AdminLogin = () => {
             />
             <TextField
               fullWidth
-              label="Password"
+              label={t.admin.password}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -84,7 +83,7 @@ const AdminLogin = () => {
               size="large"
               sx={{ mt: 3 }}
             >
-              Sign In
+              {t.admin.signIn}
             </Button>
           </form>
         </CardContent>

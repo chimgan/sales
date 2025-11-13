@@ -29,9 +29,9 @@ export const ru = {
 
   // Auth Dialog
   auth: {
-    signIn: 'Вход',
-    signUp: 'Регистрация',
-    continueWithGoogle: 'Продолжить через Google',
+    signIn: 'Войти',
+    signUp: 'Зарегистрироваться',
+    continueWithGoogle: 'Продолжить с Google',
     or: 'ИЛИ',
     displayName: 'Отображаемое имя',
     email: 'Email',
@@ -42,6 +42,20 @@ export const ru = {
     haveAccount: 'Уже есть аккаунт? Перейдите на вкладку Вход',
     fillAllFields: 'Пожалуйста, заполните все поля',
     passwordTooShort: 'Пароль должен быть не менее 6 символов',
+    emailAlreadyInUse: 'Этот email уже используется. Пожалуйста, войдите или используйте другой email.',
+    invalidEmail: 'Неверный формат email адреса.',
+    weakPassword: 'Слишком слабый пароль. Используйте минимум 6 символов.',
+    userNotFound: 'Пользователь с таким email не найден.',
+    wrongPassword: 'Неверный пароль. Попробуйте снова.',
+    tooManyRequests: 'Слишком много попыток входа. Пожалуйста, попробуйте позже.',
+    networkError: 'Ошибка сети. Проверьте подключение к интернету.',
+    popupClosed: 'Окно входа было закрыто. Попробуйте снова.',
+    accountExistsWithDifferentCredential: 'Аккаунт с этим email уже существует, но с другим способом входа.',
+    operationNotAllowed: 'Этот способ входа отключен. Обратитесь к администратору.',
+    configurationNotFound: 'Вход через Google не настроен. Обратитесь к администратору.',
+    unknownError: 'Произошла неизвестная ошибка. Попробуйте снова.',
+    signInFailed: 'Не удалось войти. Попробуйте снова.',
+    signUpFailed: 'Не удалось зарегистрироваться. Попробуйте снова.',
   },
 
   // Item statuses

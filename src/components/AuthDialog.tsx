@@ -16,6 +16,7 @@ import {
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getAuthErrorMessage } from '../utils/authErrors';
 
 interface AuthDialogProps {
   open: boolean;
@@ -39,7 +40,8 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       await signInWithGoogle();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google');
+      const errorMessage = err.code ? getAuthErrorMessage(err.code, t) : t.auth.signInFailed;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,8 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       await signInWithEmail(email, password);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      const errorMessage = err.code ? getAuthErrorMessage(err.code, t) : t.auth.signInFailed;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -77,7 +80,8 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       await signUpWithEmail(email, password, displayName);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to sign up');
+      const errorMessage = err.code ? getAuthErrorMessage(err.code, t) : t.auth.signUpFailed;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

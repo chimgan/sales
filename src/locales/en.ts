@@ -44,6 +44,21 @@ export const en: TranslationKeys = {
     haveAccount: 'Already have an account? Switch to Sign In tab',
     fillAllFields: 'Please fill in all fields',
     passwordTooShort: 'Password must be at least 6 characters',
+    // Firebase error messages
+    emailAlreadyInUse: 'This email is already in use. Please sign in or use a different email.',
+    invalidEmail: 'Invalid email address format.',
+    weakPassword: 'Password is too weak. Use at least 6 characters.',
+    userNotFound: 'No user found with this email address.',
+    wrongPassword: 'Incorrect password. Please try again.',
+    tooManyRequests: 'Too many login attempts. Please try again later.',
+    networkError: 'Network error. Please check your internet connection.',
+    popupClosed: 'Sign-in popup was closed. Please try again.',
+    accountExistsWithDifferentCredential: 'An account already exists with this email but different sign-in method.',
+    operationNotAllowed: 'This sign-in method is disabled. Please contact the administrator.',
+    configurationNotFound: 'Google sign-in is not configured. Please contact the administrator.',
+    unknownError: 'An unknown error occurred. Please try again.',
+    signInFailed: 'Failed to sign in. Please try again.',
+    signUpFailed: 'Failed to sign up. Please try again.',
   },
 
   // Admin
