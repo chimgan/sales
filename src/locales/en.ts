@@ -89,6 +89,7 @@ export const en: TranslationKeys = {
     description: 'Description',
     price: 'Price',
     discountPrice: 'Discount Price',
+    currency: 'Currency',
     category: 'Category',
     status: 'Status',
     images: 'Images',
@@ -170,6 +171,15 @@ export const en: TranslationKeys = {
     onSale: 'On Sale',
     reserved: 'Reserved',
     sold: 'Sold',
+  },
+
+  // Currencies
+  currency: {
+    TRY: 'Turkish Lira (₺)',
+    USD: 'US Dollar ($)',
+    EUR: 'Euro (€)',
+    RUB: 'Russian Ruble (₽)',
+    label: 'Currency',
   },
 
   // Item Detail Page

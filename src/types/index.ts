@@ -1,4 +1,5 @@
 export type ItemStatus = 'on_sale' | 'reserved' | 'sold';
+export type Currency = 'TRY' | 'USD' | 'EUR' | 'RUB';
 
 export interface Item {
   id: string;
@@ -6,6 +7,7 @@ export interface Item {
   description: string;
   price: number;
   discountPrice?: number;
+  currency: Currency;
   images: string[];
   status: ItemStatus;
   category: string;

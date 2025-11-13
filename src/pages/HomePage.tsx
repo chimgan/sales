@@ -22,6 +22,7 @@ import { Item, Category, Tag } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import AuthDialog from '../components/AuthDialog';
+import { formatPrice } from '../utils/currency';
 import LoginIcon from '@mui/icons-material/Login';
 
 const HomePage = () => {
@@ -242,25 +243,24 @@ const HomePage = () => {
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {item.description.substring(0, 100)}
-                    {item.description.length > 100 && '...'}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     {item.discountPrice ? (
                       <>
-                        <Typography variant="h5" color="secondary" fontWeight={700}>
-                          ${item.discountPrice}
+                        <Typography variant="h5" color="primary" fontWeight={700}>
+                          {formatPrice(item.discountPrice, item.currency || 'USD')}
                         </Typography>
                         <Typography
                           variant="body2"
                           color="text.secondary"
                           sx={{ textDecoration: 'line-through' }}
                         >
-                          ${item.price}
+                          {formatPrice(item.price, item.currency || 'USD')}
                         </Typography>
                       </>
                     ) : (
                       <Typography variant="h5" color="primary" fontWeight={700}>
-                        ${item.price}
+                        {formatPrice(item.price, item.currency || 'USD')}
                       </Typography>
                     )}
                   </Box>

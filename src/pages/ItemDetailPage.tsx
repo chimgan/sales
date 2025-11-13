@@ -22,6 +22,7 @@ import { Item, Inquiry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSnackbar } from 'notistack';
+import { formatPrice, getCurrencySymbol } from '../utils/currency';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const ItemDetailPage = () => {
@@ -225,31 +226,27 @@ const ItemDetailPage = () => {
             <Chip label={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline', mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
             {item.discountPrice ? (
               <>
-                <Typography variant="h3" color="secondary" fontWeight={700}>
-                  ${item.discountPrice}
+                <Typography variant="h3" color="primary" fontWeight={700}>
+                  {formatPrice(item.discountPrice, item.currency || 'USD')}
                 </Typography>
                 <Typography variant="h5" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                  ${item.price}
+                  {formatPrice(item.price, item.currency || 'USD')}
                 </Typography>
                 <Chip
-                  label={`Save $${(item.price - item.discountPrice).toFixed(2)}`}
+                  label={`${t.common.save || 'Save'} ${getCurrencySymbol(item.currency || 'USD')}${(item.price - item.discountPrice).toFixed(2)}`}
                   color="secondary"
                   size="small"
                 />
               </>
             ) : (
               <Typography variant="h3" color="primary" fontWeight={700}>
-                ${item.price}
+                {formatPrice(item.price, item.currency || 'USD')}
               </Typography>
             )}
           </Box>
-
-          <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-            {item.description}
-          </Typography>
 
           <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
             <CardContent>

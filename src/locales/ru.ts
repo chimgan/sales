@@ -65,6 +65,15 @@ export const ru = {
     sold: 'Продано',
   },
 
+  // Currencies
+  currency: {
+    TRY: 'Турецкая лира (₺)',
+    USD: 'Доллар США ($)',
+    EUR: 'Евро (€)',
+    RUB: 'Российский рубль (₽)',
+    label: 'Валюта',
+  },
+
   // Item Detail Page
   itemDetail: {
     status: 'Статус',
@@ -132,6 +141,7 @@ export const ru = {
     description: 'Описание',
     price: 'Цена',
     discountPrice: 'Цена со скидкой',
+    currency: 'Валюта',
     category: 'Категория',
     status: 'Статус',
     images: 'Изображения',

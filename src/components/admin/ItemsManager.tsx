@@ -29,10 +29,11 @@ import {
 import { Add, Edit, Delete } from '@mui/icons-material';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import { Item, Category, Tag, ItemStatus } from '../../types';
+import { Item, Category, Tag, ItemStatus, Currency } from '../../types';
 import { useSnackbar } from 'notistack';
 import { uploadMultipleToCloudinary } from '../../utils/cloudinary';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { formatPrice } from '../../utils/currency';
 
 const ItemsManager = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -50,6 +51,7 @@ const ItemsManager = () => {
     description: '',
     price: '',
     discountPrice: '',
+    currency: 'USD' as Currency,
     category: '',
     tags: [] as string[],
     status: 'on_sale' as ItemStatus,
@@ -109,6 +111,7 @@ const ItemsManager = () => {
         description: item.description,
         price: item.price.toString(),
         discountPrice: item.discountPrice?.toString() || '',
+        currency: item.currency || 'USD',
         category: item.category,
         tags: item.tags || [],
         status: item.status,
@@ -121,6 +124,7 @@ const ItemsManager = () => {
         description: '',
         price: '',
         discountPrice: '',
+        currency: 'USD',
         category: '',
         tags: [],
         status: 'on_sale',
@@ -163,6 +167,7 @@ const ItemsManager = () => {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
+        currency: formData.currency,
         category: formData.category,
         tags: formData.tags,
         status: formData.status,
@@ -261,13 +266,13 @@ const ItemsManager = () => {
                 <TableCell>
                   {item.discountPrice ? (
                     <>
-                      ${item.discountPrice}{' '}
+                      {formatPrice(item.discountPrice, item.currency || 'USD')}{' '}
                       <span style={{ textDecoration: 'line-through', color: '#999' }}>
-                        ${item.price}
+                        {formatPrice(item.price, item.currency || 'USD')}
                       </span>
                     </>
                   ) : (
-                    `$${item.price}`
+                    formatPrice(item.price, item.currency || 'USD')
                   )}
                 </TableCell>
                 <TableCell>{item.category}</TableCell>
@@ -329,6 +334,20 @@ const ItemsManager = () => {
                 value={formData.discountPrice}
                 onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
               />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                label={`${t.admin.currency} ${t.admin.required}`}
+                fullWidth
+                select
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value as Currency })}
+              >
+                <MenuItem value="TRY">{t.currency.TRY}</MenuItem>
+                <MenuItem value="USD">{t.currency.USD}</MenuItem>
+                <MenuItem value="EUR">{t.currency.EUR}</MenuItem>
+                <MenuItem value="RUB">{t.currency.RUB}</MenuItem>
+              </TextField>
             </Grid>
             <Grid item xs={6}>
               <TextField
