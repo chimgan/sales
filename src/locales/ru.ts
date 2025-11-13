@@ -107,6 +107,7 @@ export const ru = {
     create: 'Создать',
     close: 'Закрыть',
     search: 'Поиск',
+    views: 'Просмотры',
   },
 
   // Footer

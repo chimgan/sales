@@ -15,6 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -23,6 +24,7 @@ import { format } from 'date-fns';
 
 const ProfilePage = () => {
   const { user, userProfile, signInWithGoogle, signOut } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,13 +76,13 @@ const ProfilePage = () => {
     return (
       <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
         <Typography variant="h4" gutterBottom>
-          Sign in to view your profile
+          {t.profile.title}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Connect with Google to track your inquiries and manage your profile
+          {t.itemDetail.signInToInquire}
         </Typography>
         <Button variant="contained" size="large" onClick={signInWithGoogle}>
-          Sign in with Google
+          {t.auth.continueWithGoogle}
         </Button>
       </Container>
     );
@@ -92,18 +94,23 @@ const ProfilePage = () => {
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
             <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Avatar
-                  src={user.photoURL || undefined}
-                  alt={user.displayName || 'User'}
-                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
-                />
-                <Typography variant="h5" gutterBottom>
-                  {user.displayName || 'Anonymous'}
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ textAlign: 'center' }}>
+                  {t.profile.accountInfo}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {user.email}
-                </Typography>
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Avatar
+                    src={user.photoURL || undefined}
+                    alt={user.displayName || 'User'}
+                    sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+                  />
+                  <Typography variant="h5" gutterBottom>
+                    {user.displayName || 'Anonymous'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {user.email}
+                  </Typography>
+                </Box>
                 {userProfile?.phoneNumber && (
                   <Typography variant="body2" color="text.secondary">
                     {userProfile.phoneNumber}
@@ -118,7 +125,7 @@ const ProfilePage = () => {
                     navigate('/');
                   }}
                 >
-                  Sign Out
+                  {t.navbar.signOut}
                 </Button>
               </CardContent>
             </Card>
@@ -128,16 +135,25 @@ const ProfilePage = () => {
             <Card>
               <CardContent>
                 <Typography variant="h5" gutterBottom>
-                  My Inquiries
+                  {t.profile.myInquiries}
                 </Typography>
                 {loading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                     <CircularProgress />
                   </Box>
                 ) : inquiries.length === 0 ? (
-                  <Typography variant="body1" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-                    You haven't made any inquiries yet
-                  </Typography>
+                  <Box sx={{ py: 4, textAlign: 'center' }}>
+                    <Typography variant="body1" color="text.secondary" gutterBottom>
+                      {t.profile.noInquiries}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      sx={{ mt: 2 }}
+                      onClick={() => navigate('/')}
+                    >
+                      {t.profile.browseItems}
+                    </Button>
+                  </Box>
                 ) : (
                   <List>
                     {inquiries.map((inquiry) => (
@@ -152,7 +168,7 @@ const ProfilePage = () => {
                       >
                         <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-between', mb: 1 }}>
                           <Typography variant="subtitle1" fontWeight={600}>
-                            Item ID: {inquiry.itemId}
+                            {t.profile.item}: {inquiry.itemId}
                           </Typography>
                           <Chip label={inquiry.status} color={getStatusColor(inquiry.status)} size="small" />
                         </Box>

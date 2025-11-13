@@ -109,6 +109,7 @@ export const en: TranslationKeys = {
     create: 'Create',
     close: 'Close',
     search: 'Search',
+    views: 'Views',
   },
 
   // Footer

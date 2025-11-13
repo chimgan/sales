@@ -20,6 +20,7 @@ import { doc, getDoc, updateDoc, collection, addDoc, increment } from 'firebase/
 import { db } from '../config/firebase';
 import { Item, Inquiry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useSnackbar } from 'notistack';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -27,6 +28,7 @@ const ItemDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, signInWithGoogle } = useAuth();
+  const { t } = useLanguage();
   const { enqueueSnackbar } = useSnackbar();
   
   const [item, setItem] = useState<Item | null>(null);
@@ -154,11 +156,11 @@ const ItemDetailPage = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'on_sale':
-        return 'Available';
+        return t.status.onSale;
       case 'reserved':
-        return 'Reserved';
+        return t.status.reserved;
       case 'sold':
-        return 'Sold';
+        return t.status.sold;
       default:
         return status;
     }
@@ -171,7 +173,7 @@ const ItemDetailPage = () => {
         onClick={() => navigate('/')}
         sx={{ mb: 3 }}
       >
-        Back to Marketplace
+        {t.itemDetail.backToHome}
       </Button>
 
       <Grid container spacing={4}>
@@ -242,7 +244,7 @@ const ItemDetailPage = () => {
           <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Category
+                {t.itemDetail.category}
               </Typography>
               <Typography variant="body1" sx={{ mb: 2 }}>
                 {item.category}
@@ -251,7 +253,7 @@ const ItemDetailPage = () => {
               {item.tags && item.tags.length > 0 && (
                 <>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Tags
+                    {t.itemDetail.tags}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {item.tags.map((tag, idx) => (
@@ -271,53 +273,55 @@ const ItemDetailPage = () => {
             onClick={handleAuthAndInquiry}
             sx={{ mb: 2 }}
           >
-            {item.status === 'sold' ? 'Sold Out' : 'Contact Seller'}
+            {item.status === 'sold' ? t.status.sold : t.itemDetail.inquireAbout}
           </Button>
 
           <Typography variant="caption" color="text.secondary">
-            Views: {item.views || 0}
+            {t.common.views}: {item.views || 0}
           </Typography>
         </Grid>
       </Grid>
 
       {/* Inquiry Dialog */}
       <Dialog open={inquiryDialogOpen} onClose={() => setInquiryDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Contact Seller</DialogTitle>
+        <DialogTitle>{t.itemDetail.inquireAbout}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField
-              label="Your Name *"
+              label={t.itemDetail.yourName}
               value={inquiryForm.name}
               onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
               fullWidth
+              required
             />
             <TextField
-              label="Email"
+              label={t.itemDetail.yourEmail}
               type="email"
               value={inquiryForm.email}
               onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Phone"
+              label={t.itemDetail.phoneOptional}
               value={inquiryForm.phone}
               onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Message *"
+              label={t.itemDetail.yourMessage}
               multiline
               rows={4}
               value={inquiryForm.comment}
               onChange={(e) => setInquiryForm({ ...inquiryForm, comment: e.target.value })}
               fullWidth
+              required
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setInquiryDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setInquiryDialogOpen(false)}>{t.itemDetail.cancel}</Button>
           <Button onClick={handleInquirySubmit} variant="contained">
-            Send Inquiry
+            {t.itemDetail.submit}
           </Button>
         </DialogActions>
       </Dialog>
