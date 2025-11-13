@@ -50,5 +50,5 @@ export interface UserProfile {
   phoneNumber?: string;
   inquiries: string[];
   createdAt: Date;
-  language?: 'ru' | 'en';
+  language?: 'ru' | 'en' | 'tr';
 }

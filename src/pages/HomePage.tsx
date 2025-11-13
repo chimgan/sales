@@ -108,11 +108,11 @@ const HomePage = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'on_sale':
-        return 'On Sale';
+        return t.status.onSale;
       case 'reserved':
-        return 'Reserved';
+        return t.status.reserved;
       case 'sold':
-        return 'Sold';
+        return t.status.sold;
       default:
         return status;
     }

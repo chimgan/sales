@@ -59,6 +59,9 @@ export const en: TranslationKeys = {
     unknownError: 'An unknown error occurred. Please try again.',
     signInFailed: 'Failed to sign in. Please try again.',
     signUpFailed: 'Failed to sign up. Please try again.',
+    agreeToTerms: 'I agree to the Terms of Service',
+    mustAgreeToTerms: 'You must agree to the Terms of Service to continue',
+    termsOfService: 'Terms of Service',
   },
 
   // Admin
@@ -240,5 +243,7 @@ export const en: TranslationKeys = {
   footer: {
     copyright: 'All rights reserved',
     tagline: 'Buy and sell home goods, auto, and more with confidence',
+    termsOfService: 'Terms of Service',
+    privacyPolicy: 'Privacy Policy',
   },
 };

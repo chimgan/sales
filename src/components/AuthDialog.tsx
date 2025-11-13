@@ -12,11 +12,14 @@ import {
   Alert,
   Tabs,
   Tab,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getAuthErrorMessage } from '../utils/authErrors';
+import { Link } from 'react-router-dom';
 
 interface AuthDialogProps {
   open: boolean;
@@ -32,6 +35,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -74,6 +78,10 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       setError(t.auth.passwordTooShort);
       return;
     }
+    if (!agreedToTerms) {
+      setError(t.auth.mustAgreeToTerms);
+      return;
+    }
     try {
       setError('');
       setLoading(true);
@@ -92,6 +100,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
     setPassword('');
     setDisplayName('');
     setError('');
+    setAgreedToTerms(false);
     setTabValue(0);
     onClose();
   };
@@ -160,6 +169,30 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             disabled={loading}
             helperText={tabValue === 1 ? t.auth.passwordHint : ''}
           />
+          
+          {tabValue === 1 && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  disabled={loading}
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  {t.auth.agreeToTerms.split(' ')[0]} {' '}
+                  <Link 
+                    to="/terms" 
+                    target="_blank"
+                    style={{ color: 'inherit', textDecoration: 'underline' }}
+                  >
+                    {t.auth.termsOfService}
+                  </Link>
+                </Typography>
+              }
+            />
+          )}
         </Box>
 
         <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>

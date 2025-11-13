@@ -4,8 +4,9 @@ import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
 import { ru, TranslationKeys } from '../locales/ru';
 import { en } from '../locales/en';
+import { tr } from '../locales/tr';
 
-type Language = 'ru' | 'en';
+type Language = 'ru' | 'en' | 'tr';
 
 interface LanguageContextType {
   language: Language;
@@ -16,6 +17,7 @@ interface LanguageContextType {
 const translations: Record<Language, TranslationKeys> = {
   ru,
   en,
+  tr,
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -38,7 +40,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLanguageState(userProfile.language as Language);
     } else {
       const savedLang = localStorage.getItem('language') as Language;
-      if (savedLang && (savedLang === 'ru' || savedLang === 'en')) {
+      if (savedLang && (savedLang === 'ru' || savedLang === 'en' || savedLang === 'tr')) {
         setLanguageState(savedLang);
       }
     }
