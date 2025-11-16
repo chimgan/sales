@@ -14,6 +14,8 @@ import {
   Box,
   CircularProgress,
   Paper,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { collection, query, getDocs, orderBy, where } from 'firebase/firestore';
@@ -24,6 +26,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import AuthDialog from '../components/AuthDialog';
 import { formatPrice } from '../utils/currency';
 import LoginIcon from '@mui/icons-material/Login';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import ViewListIcon from '@mui/icons-material/ViewList';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -36,6 +40,7 @@ const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchData();
@@ -166,7 +171,26 @@ const HomePage = () => {
         )}
       </Box>
 
-      {/* Filters */}
+      {/* Filters and View Toggle */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5" fontWeight={600}>
+          {t.home.category}
+        </Typography>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(e, newView) => newView && setViewMode(newView)}
+          size="small"
+        >
+          <ToggleButton value="grid" aria-label="grid view">
+            <ViewModuleIcon />
+          </ToggleButton>
+          <ToggleButton value="list" aria-label="list view">
+            <ViewListIcon />
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
           <TextField
@@ -208,7 +232,7 @@ const HomePage = () => {
         </Grid>
       </Grid>
 
-      {/* Items Grid */}
+      {/* Items Display */}
       {filteredItems.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h5" gutterBottom>
@@ -218,7 +242,7 @@ const HomePage = () => {
             {items.length === 0 ? t.home.checkBackLater : t.home.noItemsText}
           </Typography>
         </Box>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <Grid container spacing={3}>
           {filteredItems.map((item) => (
             <Grid item xs={12} sm={6} md={4} key={item.id}>
@@ -279,6 +303,70 @@ const HomePage = () => {
             </Grid>
           ))}
         </Grid>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {filteredItems.map((item) => (
+            <Card key={item.id} sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
+              <CardMedia
+                component="img"
+                sx={{
+                  width: { xs: '100%', sm: 200 },
+                  height: { xs: 200, sm: 'auto' },
+                  objectFit: 'cover',
+                }}
+                image={item.images[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                alt={item.title}
+              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                    <Typography variant="h5" component="h2" fontWeight={600}>
+                      {item.title}
+                    </Typography>
+                    <Chip
+                      label={getStatusLabel(item.status)}
+                      color={getStatusColor(item.status)}
+                      size="small"
+                      sx={{ ml: 2 }}
+                    />
+                  </Box>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                    {item.description}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    {item.discountPrice ? (
+                      <>
+                        <Typography variant="h4" color="primary" fontWeight={700}>
+                          {formatPrice(item.discountPrice, item.currency || 'USD')}
+                        </Typography>
+                        <Typography
+                          variant="h6"
+                          color="text.secondary"
+                          sx={{ textDecoration: 'line-through' }}
+                        >
+                          {formatPrice(item.price, item.currency || 'USD')}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography variant="h4" color="primary" fontWeight={700}>
+                        {formatPrice(item.price, item.currency || 'USD')}
+                      </Typography>
+                    )}
+                  </Box>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>
+                  <Button
+                    variant="contained"
+                    component={Link}
+                    to={`/item/${item.id}`}
+                  >
+                    {t.home.viewDetails}
+                  </Button>
+                </CardActions>
+              </Box>
+            </Card>
+          ))}
+        </Box>
       )}
 
       {/* Auth Dialog */}
