@@ -15,6 +15,9 @@ export interface Item {
   views: number;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: string;
+  creatorName?: string;
+  location?: string;
 }
 
 export interface Category {

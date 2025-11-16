@@ -24,6 +24,8 @@ export const tr: TranslationKeys = {
     category: 'Kategori',
     status: 'Durum',
     allStatuses: 'Tüm Durumlar',
+    district: 'Mahalle / İlçe',
+    allMersinDistricts: 'Tüm Mersin İlçeleri',
     noItemsFound: 'Ürün bulunamadı',
     noItemsText: 'Filtreleri ayarlamayı deneyin',
     checkBackLater: 'Yeni ürünler için daha sonra tekrar kontrol edin!',

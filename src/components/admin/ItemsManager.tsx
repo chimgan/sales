@@ -25,6 +25,8 @@ import {
   Select,
   OutlinedInput,
   SelectChangeEvent,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
@@ -34,6 +36,7 @@ import { useSnackbar } from 'notistack';
 import { uploadMultipleToCloudinary } from '../../utils/cloudinary';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatPrice } from '../../utils/currency';
+import { getMersinDistricts } from '../../data/locations';
 
 const ItemsManager = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -56,8 +59,12 @@ const ItemsManager = () => {
     tags: [] as string[],
     status: 'on_sale' as ItemStatus,
     images: [] as string[],
+    location: '',
+    district: '',
+    useDropdown: true,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const mersinDistricts = getMersinDistricts();
 
   useEffect(() => {
     fetchData();
@@ -105,6 +112,9 @@ const ItemsManager = () => {
 
   const handleOpenDialog = (item?: Item) => {
     if (item) {
+      const location = item.location || '';
+      const isMersinLocation = location.startsWith('Mersin');
+      const districtFromLocation = location.includes(' - ') ? location.split(' - ')[1] : '';
       setEditingItem(item);
       setFormData({
         title: item.title,
@@ -116,6 +126,9 @@ const ItemsManager = () => {
         tags: item.tags || [],
         status: item.status,
         images: item.images || [],
+        location: isMersinLocation ? '' : location,
+        district: isMersinLocation ? districtFromLocation : '',
+        useDropdown: isMersinLocation,
       });
     } else {
       setEditingItem(null);
@@ -129,6 +142,9 @@ const ItemsManager = () => {
         tags: [],
         status: 'on_sale',
         images: [],
+        location: '',
+        district: '',
+        useDropdown: true,
       });
     }
     setImageFiles([]);
@@ -163,6 +179,11 @@ const ItemsManager = () => {
         imageUrls = [...imageUrls, ...uploadedUrls];
       }
 
+      // Build location string
+      const locationStr = formData.useDropdown
+        ? `Mersin${formData.district ? ` - ${formData.district}` : ''}`
+        : formData.location;
+
       const itemData: any = {
         title: formData.title,
         description: formData.description,
@@ -174,6 +195,7 @@ const ItemsManager = () => {
         images: imageUrls,
         views: editingItem?.views || 0,
         updatedAt: new Date(),
+        location: locationStr || undefined,
       };
 
       // Only include discountPrice if it has a value
@@ -188,6 +210,8 @@ const ItemsManager = () => {
         await addDoc(collection(db, 'items'), {
           ...itemData,
           createdAt: new Date(),
+          createdBy: 'admin',
+          creatorName: 'Admin',
         });
         enqueueSnackbar(t.admin.itemAdded, { variant: 'success' });
       }
@@ -377,6 +401,51 @@ const ItemsManager = () => {
                 <MenuItem value="sold">{t.status.sold}</MenuItem>
               </TextField>
             </Grid>
+
+            {/* Location Section */}
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.useDropdown}
+                    onChange={(e) =>
+                      setFormData({ ...formData, useDropdown: e.target.checked, district: '', location: '' })
+                    }
+                  />
+                }
+                label="Use Mersin District Dropdown"
+              />
+            </Grid>
+
+            {formData.useDropdown ? (
+              <Grid item xs={12}>
+                <TextField
+                  label="District"
+                  fullWidth
+                  select
+                  value={formData.district}
+                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                >
+                  <MenuItem value="">Select District</MenuItem>
+                  {mersinDistricts.map((district) => (
+                    <MenuItem key={district} value={district}>
+                      {district}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : (
+              <Grid item xs={12}>
+                <TextField
+                  label="Location (Manual Entry)"
+                  fullWidth
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="e.g., Mersin - Tece"
+                />
+              </Grid>
+            )}
+            
             <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>{t.admin.tags}</InputLabel>

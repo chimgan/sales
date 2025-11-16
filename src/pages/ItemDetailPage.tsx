@@ -226,6 +226,16 @@ const ItemDetailPage = () => {
             <Chip label={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
           </Box>
 
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+            📝 Created by: <strong>{item.creatorName || 'Admin'}</strong>
+          </Typography>
+
+          {item.location && (
+            <Typography variant="h6" color="primary.main" sx={{ mb: 2, fontWeight: 600 }}>
+              📍 {item.location}
+            </Typography>
+          )}
+
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
             {item.discountPrice ? (
               <>

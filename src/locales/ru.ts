@@ -21,6 +21,8 @@ export const ru = {
     category: 'Категория',
     status: 'Статус',
     allStatuses: 'Все статусы',
+    district: 'Район',
+    allMersinDistricts: 'Все районы Мерсина',
     noItemsFound: 'Товары не найдены',
     noItemsText: 'Попробуйте изменить фильтры',
     checkBackLater: 'Зайдите позже для новых товаров!',

@@ -23,6 +23,8 @@ export const en: TranslationKeys = {
     category: 'Category',
     status: 'Status',
     allStatuses: 'All Statuses',
+    district: 'District',
+    allMersinDistricts: 'All Mersin Districts',
     noItemsFound: 'No items found',
     noItemsText: 'Try adjusting your filters',
     checkBackLater: 'Check back later for new items!',

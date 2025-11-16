@@ -28,6 +28,7 @@ import { formatPrice } from '../utils/currency';
 import LoginIcon from '@mui/icons-material/Login';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import { getMersinDistricts } from '../data/locations';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -38,9 +39,10 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedDistrict, setSelectedDistrict] = useState('all');
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const districts = getMersinDistricts();
 
   useEffect(() => {
     fetchData();
@@ -93,8 +95,10 @@ const HomePage = () => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
-    return matchesSearch && matchesCategory && matchesStatus;
+    const matchesDistrict =
+      selectedDistrict === 'all' ||
+      (item.location && item.location.toLowerCase().includes(selectedDistrict.toLowerCase()));
+    return matchesSearch && matchesCategory && matchesDistrict;
   });
 
   const getStatusColor = (status: string) => {
@@ -220,14 +224,16 @@ const HomePage = () => {
           <TextField
             select
             fullWidth
-            label={t.home.status}
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            label={t.home.district}
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(e.target.value)}
           >
-            <MenuItem value="all">{t.home.allStatuses}</MenuItem>
-            <MenuItem value="on_sale">{t.status.onSale}</MenuItem>
-            <MenuItem value="reserved">{t.status.reserved}</MenuItem>
-            <MenuItem value="sold">{t.status.sold}</MenuItem>
+            <MenuItem value="all">{t.home.allMersinDistricts}</MenuItem>
+            {districts.map((district) => (
+              <MenuItem key={district} value={district}>
+                {district}
+              </MenuItem>
+            ))}
           </TextField>
         </Grid>
       </Grid>
@@ -268,6 +274,14 @@ const HomePage = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {item.description.substring(0, 100)}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    By: {item.creatorName || 'Admin'}
+                  </Typography>
+                  {item.location && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                      📍 {item.location}
+                    </Typography>
+                  )}
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     {item.discountPrice ? (
                       <>
@@ -333,6 +347,14 @@ const HomePage = () => {
                   <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                     {item.description}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                    Created by: {item.creatorName || 'Admin'}
+                  </Typography>
+                  {item.location && (
+                    <Typography variant="body2" color="primary.main" sx={{ mb: 2, fontWeight: 600 }}>
+                      📍 {item.location}
+                    </Typography>
+                  )}
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     {item.discountPrice ? (
                       <>
