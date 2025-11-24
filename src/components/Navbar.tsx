@@ -94,6 +94,9 @@ const Navbar = () => {
                 <MenuItem component={Link} to="/profile" onClick={handleClose}>
                   {t.navbar.myProfile}
                 </MenuItem>
+                <MenuItem component={Link} to="/my-ads" onClick={handleClose}>
+                  {t.navbar.myAdvertisements}
+                </MenuItem>
                 <MenuItem onClick={handleSignOut}>{t.navbar.signOut}</MenuItem>
               </Menu>
             </>

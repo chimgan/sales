@@ -29,7 +29,7 @@ import {
   Checkbox,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { Item, Category, Tag, ItemStatus, Currency } from '../../types';
 import { useSnackbar } from 'notistack';
@@ -48,6 +48,8 @@ const ItemsManager = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dailyLimit, setDailyLimit] = useState<string>('');
+  const [savingLimit, setSavingLimit] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -68,6 +70,7 @@ const ItemsManager = () => {
 
   useEffect(() => {
     fetchData();
+    fetchDailyLimit();
   }, []);
 
   const fetchData = async () => {
@@ -107,6 +110,41 @@ const ItemsManager = () => {
       enqueueSnackbar(t.admin.errorLoadingData, { variant: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDailyLimit = async () => {
+    try {
+      const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+      if (settingsDoc.exists()) {
+        const data = settingsDoc.data();
+        if (data.dailyUserAdLimit !== undefined) {
+          setDailyLimit(String(data.dailyUserAdLimit));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching daily limit:', error);
+    }
+  };
+
+  const handleSaveDailyLimit = async () => {
+    if (!dailyLimit) return;
+    try {
+      setSavingLimit(true);
+      const limitValue = Number(dailyLimit);
+      await setDoc(
+        doc(db, 'settings', 'general'),
+        {
+          dailyUserAdLimit: limitValue,
+        },
+        { merge: true }
+      );
+      enqueueSnackbar(t.admin.dailyLimitSaved, { variant: 'success' });
+    } catch (error) {
+      console.error('Error saving daily limit:', error);
+      enqueueSnackbar(t.common.error, { variant: 'error' });
+    } finally {
+      setSavingLimit(false);
     }
   };
 
@@ -261,6 +299,31 @@ const ItemsManager = () => {
         <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
           {t.admin.addItem}
         </Button>
+      </Box>
+
+      <Box sx={{ mb: 4, p: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
+        <Typography variant="h6" gutterBottom>
+          {t.admin.dailyLimitTitle}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {t.admin.dailyLimitDescription}
+        </Typography>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              label={t.admin.dailyLimitPlaceholder}
+              fullWidth
+              type="number"
+              value={dailyLimit}
+              onChange={(e) => setDailyLimit(e.target.value)}
+            />
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={handleSaveDailyLimit} disabled={savingLimit || !dailyLimit}>
+              {savingLimit ? <CircularProgress size={24} /> : t.admin.save}
+            </Button>
+          </Grid>
+        </Grid>
       </Box>
 
       <TableContainer component={Paper}>

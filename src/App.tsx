@@ -8,6 +8,7 @@ import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ProfilePage from './pages/ProfilePage'
 import TermsOfService from './pages/TermsOfService'
+import MyAdvertisementsPage from './pages/MyAdvertisementsPage'
 import { AuthProvider } from './contexts/AuthContext'
 import { AdminAuthProvider } from './contexts/AdminAuthContext'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -25,6 +26,7 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/item/:id" element={<ItemDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/my-ads" element={<MyAdvertisementsPage />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route

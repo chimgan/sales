@@ -16,7 +16,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { doc, getDoc, updateDoc, collection, addDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, addDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Item, Inquiry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -89,28 +89,53 @@ const ItemDetailPage = () => {
       return;
     }
 
+    if (!item) {
+      enqueueSnackbar(t.itemDetail.errorSendingInquiry, { variant: 'error' });
+      return;
+    }
+
     try {
-      const inquiry: any = {
+      const ownerId = item.createdBy;
+      const participants = [ownerId, user?.uid].filter((participant): participant is string => Boolean(participant));
+
+      const inquiryPayload: any = {
         itemId: id!,
+        itemTitle: item.title,
+        ownerId,
+        ownerName: item.creatorName || 'Admin',
         userName: inquiryForm.name,
         comment: inquiryForm.comment,
         createdAt: new Date(),
+        updatedAt: new Date(),
         status: 'new',
+        lastMessageText: inquiryForm.comment,
+        participants,
       };
 
-      // Only add optional fields if they have values
       if (user?.uid) {
-        inquiry.userId = user.uid;
+        inquiryPayload.userId = user.uid;
       }
       if (inquiryForm.email) {
-        inquiry.userEmail = inquiryForm.email;
+        inquiryPayload.userEmail = inquiryForm.email;
       }
       if (inquiryForm.phone) {
-        inquiry.userPhone = inquiryForm.phone;
+        inquiryPayload.userPhone = inquiryForm.phone;
       }
 
-      console.log('Submitting inquiry:', inquiry);
-      await addDoc(collection(db, 'inquiries'), inquiry);
+      console.log('Submitting inquiry:', inquiryPayload);
+      const inquiryRef = await addDoc(collection(db, 'inquiries'), inquiryPayload);
+
+      await addDoc(collection(db, 'inquiries', inquiryRef.id, 'messages'), {
+        senderId: user?.uid || 'guest',
+        senderName: inquiryForm.name,
+        text: inquiryForm.comment,
+        createdAt: serverTimestamp(),
+      });
+
+      await updateDoc(inquiryRef, {
+        lastMessageAt: serverTimestamp(),
+      });
+
       enqueueSnackbar(t.itemDetail.inquirySentSuccess, { variant: 'success' });
       setInquiryDialogOpen(false);
       setInquiryForm({ name: '', email: '', phone: '', comment: '' });

@@ -42,7 +42,22 @@ export interface Inquiry {
   userPhone?: string;
   comment: string;
   createdAt: Date;
+  updatedAt?: Date;
   status: 'new' | 'contacted' | 'closed';
+  ownerId?: string;
+  ownerName?: string;
+  itemTitle?: string;
+  lastMessageText?: string;
+  lastMessageAt?: Date;
+  participants?: string[];
+}
+
+export interface InquiryMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  createdAt: Date;
 }
 
 export interface UserProfile {
