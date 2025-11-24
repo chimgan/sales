@@ -1,4 +1,5 @@
 export type ItemStatus = 'on_sale' | 'reserved' | 'sold';
+export type Currency = 'TRY' | 'USD' | 'EUR' | 'RUB';
 
 export interface Item {
   id: string;
@@ -6,6 +7,7 @@ export interface Item {
   description: string;
   price: number;
   discountPrice?: number;
+  currency: Currency;
   images: string[];
   status: ItemStatus;
   category: string;
@@ -13,6 +15,9 @@ export interface Item {
   views: number;
   createdAt: Date;
   updatedAt: Date;
+  createdBy?: string;
+  creatorName?: string;
+  location?: string;
 }
 
 export interface Category {
@@ -37,7 +42,22 @@ export interface Inquiry {
   userPhone?: string;
   comment: string;
   createdAt: Date;
+  updatedAt?: Date;
   status: 'new' | 'contacted' | 'closed';
+  ownerId?: string;
+  ownerName?: string;
+  itemTitle?: string;
+  lastMessageText?: string;
+  lastMessageAt?: Date;
+  participants?: string[];
+}
+
+export interface InquiryMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  createdAt: Date;
 }
 
 export interface UserProfile {
@@ -48,4 +68,5 @@ export interface UserProfile {
   phoneNumber?: string;
   inquiries: string[];
   createdAt: Date;
+  language?: 'ru' | 'en' | 'tr';
 }

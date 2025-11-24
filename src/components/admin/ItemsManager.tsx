@@ -25,16 +25,22 @@ import {
   Select,
   OutlinedInput,
   SelectChangeEvent,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import { Item, Category, Tag, ItemStatus } from '../../types';
+import { Item, Category, Tag, ItemStatus, Currency } from '../../types';
 import { useSnackbar } from 'notistack';
 import { uploadMultipleToCloudinary } from '../../utils/cloudinary';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { formatPrice } from '../../utils/currency';
+import { getMersinDistricts } from '../../data/locations';
 
 const ItemsManager = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -42,21 +48,29 @@ const ItemsManager = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dailyLimit, setDailyLimit] = useState<string>('');
+  const [savingLimit, setSavingLimit] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
     discountPrice: '',
+    currency: 'USD' as Currency,
     category: '',
     tags: [] as string[],
     status: 'on_sale' as ItemStatus,
     images: [] as string[],
+    location: '',
+    district: '',
+    useDropdown: true,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const mersinDistricts = getMersinDistricts();
 
   useEffect(() => {
     fetchData();
+    fetchDailyLimit();
   }, []);
 
   const fetchData = async () => {
@@ -93,24 +107,66 @@ const ItemsManager = () => {
       );
     } catch (error) {
       console.error('Error fetching data:', error);
-      enqueueSnackbar('Error loading data', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorLoadingData, { variant: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchDailyLimit = async () => {
+    try {
+      const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+      if (settingsDoc.exists()) {
+        const data = settingsDoc.data();
+        if (data.dailyUserAdLimit !== undefined) {
+          setDailyLimit(String(data.dailyUserAdLimit));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching daily limit:', error);
+    }
+  };
+
+  const handleSaveDailyLimit = async () => {
+    if (!dailyLimit) return;
+    try {
+      setSavingLimit(true);
+      const limitValue = Number(dailyLimit);
+      await setDoc(
+        doc(db, 'settings', 'general'),
+        {
+          dailyUserAdLimit: limitValue,
+        },
+        { merge: true }
+      );
+      enqueueSnackbar(t.admin.dailyLimitSaved, { variant: 'success' });
+    } catch (error) {
+      console.error('Error saving daily limit:', error);
+      enqueueSnackbar(t.common.error, { variant: 'error' });
+    } finally {
+      setSavingLimit(false);
+    }
+  };
+
   const handleOpenDialog = (item?: Item) => {
     if (item) {
+      const location = item.location || '';
+      const isMersinLocation = location.startsWith('Mersin');
+      const districtFromLocation = location.includes(' - ') ? location.split(' - ')[1] : '';
       setEditingItem(item);
       setFormData({
         title: item.title,
         description: item.description,
         price: item.price.toString(),
         discountPrice: item.discountPrice?.toString() || '',
+        currency: item.currency || 'USD',
         category: item.category,
         tags: item.tags || [],
         status: item.status,
         images: item.images || [],
+        location: isMersinLocation ? '' : location,
+        district: isMersinLocation ? districtFromLocation : '',
+        useDropdown: isMersinLocation,
       });
     } else {
       setEditingItem(null);
@@ -119,10 +175,14 @@ const ItemsManager = () => {
         description: '',
         price: '',
         discountPrice: '',
+        currency: 'USD',
         category: '',
         tags: [],
         status: 'on_sale',
         images: [],
+        location: '',
+        district: '',
+        useDropdown: true,
       });
     }
     setImageFiles([]);
@@ -157,16 +217,23 @@ const ItemsManager = () => {
         imageUrls = [...imageUrls, ...uploadedUrls];
       }
 
+      // Build location string
+      const locationStr = formData.useDropdown
+        ? `Mersin${formData.district ? ` - ${formData.district}` : ''}`
+        : formData.location;
+
       const itemData: any = {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
+        currency: formData.currency,
         category: formData.category,
         tags: formData.tags,
         status: formData.status,
         images: imageUrls,
         views: editingItem?.views || 0,
         updatedAt: new Date(),
+        location: locationStr || undefined,
       };
 
       // Only include discountPrice if it has a value
@@ -176,20 +243,22 @@ const ItemsManager = () => {
 
       if (editingItem) {
         await updateDoc(doc(db, 'items', editingItem.id), itemData);
-        enqueueSnackbar('Item updated successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.itemUpdated, { variant: 'success' });
       } else {
         await addDoc(collection(db, 'items'), {
           ...itemData,
           createdAt: new Date(),
+          createdBy: 'admin',
+          creatorName: 'Admin',
         });
-        enqueueSnackbar('Item created successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.itemAdded, { variant: 'success' });
       }
 
       await fetchData();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving item:', error);
-      enqueueSnackbar('Error saving item', { variant: 'error' });
+      enqueueSnackbar(t.common.error, { variant: 'error' });
     } finally {
       setUploading(false);
     }
@@ -200,11 +269,11 @@ const ItemsManager = () => {
 
     try {
       await deleteDoc(doc(db, 'items', id));
-      enqueueSnackbar('Item deleted successfully', { variant: 'success' });
+      enqueueSnackbar(t.admin.itemDeleted, { variant: 'success' });
       await fetchData();
     } catch (error) {
       console.error('Error deleting item:', error);
-      enqueueSnackbar('Error deleting item', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorDeleting, { variant: 'error' });
     }
   };
 
@@ -226,23 +295,48 @@ const ItemsManager = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Manage Items</Typography>
+        <Typography variant="h4">{t.admin.manageItems}</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
-          Add Item
+          {t.admin.addItem}
         </Button>
+      </Box>
+
+      <Box sx={{ mb: 4, p: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
+        <Typography variant="h6" gutterBottom>
+          {t.admin.dailyLimitTitle}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {t.admin.dailyLimitDescription}
+        </Typography>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              label={t.admin.dailyLimitPlaceholder}
+              fullWidth
+              type="number"
+              value={dailyLimit}
+              onChange={(e) => setDailyLimit(e.target.value)}
+            />
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={handleSaveDailyLimit} disabled={savingLimit || !dailyLimit}>
+              {savingLimit ? <CircularProgress size={24} /> : t.admin.save}
+            </Button>
+          </Grid>
+        </Grid>
       </Box>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Image</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Views</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{t.admin.image}</TableCell>
+              <TableCell>{t.admin.title}</TableCell>
+              <TableCell>{t.admin.price}</TableCell>
+              <TableCell>{t.admin.category}</TableCell>
+              <TableCell>{t.admin.status}</TableCell>
+              <TableCell>{t.admin.views}</TableCell>
+              <TableCell>{t.admin.actions}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -259,13 +353,13 @@ const ItemsManager = () => {
                 <TableCell>
                   {item.discountPrice ? (
                     <>
-                      ${item.discountPrice}{' '}
+                      {formatPrice(item.discountPrice, item.currency || 'USD')}{' '}
                       <span style={{ textDecoration: 'line-through', color: '#999' }}>
-                        ${item.price}
+                        {formatPrice(item.price, item.currency || 'USD')}
                       </span>
                     </>
                   ) : (
-                    `$${item.price}`
+                    formatPrice(item.price, item.currency || 'USD')
                   )}
                 </TableCell>
                 <TableCell>{item.category}</TableCell>
@@ -289,12 +383,12 @@ const ItemsManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
+        <DialogTitle>{editingItem ? t.admin.editItem : t.admin.addNewItem}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="Title *"
+                label={`${t.admin.title} ${t.admin.required}`}
                 fullWidth
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -302,7 +396,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Description"
+                label={t.admin.description}
                 fullWidth
                 multiline
                 rows={4}
@@ -312,7 +406,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Price *"
+                label={`${t.admin.price} ${t.admin.required}`}
                 fullWidth
                 type="number"
                 value={formData.price}
@@ -321,7 +415,7 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Discount Price"
+                label={t.admin.discountPrice}
                 fullWidth
                 type="number"
                 value={formData.discountPrice}
@@ -330,7 +424,21 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Category *"
+                label={`${t.admin.currency} ${t.admin.required}`}
+                fullWidth
+                select
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value as Currency })}
+              >
+                <MenuItem value="TRY">{t.currency.TRY}</MenuItem>
+                <MenuItem value="USD">{t.currency.USD}</MenuItem>
+                <MenuItem value="EUR">{t.currency.EUR}</MenuItem>
+                <MenuItem value="RUB">{t.currency.RUB}</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                label={`${t.admin.category} ${t.admin.required}`}
                 fullWidth
                 select
                 value={formData.category}
@@ -345,27 +453,72 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={6}>
               <TextField
-                label="Status"
+                label={t.admin.status}
                 fullWidth
                 select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as ItemStatus })}
               >
-                <MenuItem value="on_sale">On Sale</MenuItem>
-                <MenuItem value="reserved">Reserved</MenuItem>
-                <MenuItem value="sold">Sold</MenuItem>
+                <MenuItem value="on_sale">{t.status.onSale}</MenuItem>
+                <MenuItem value="reserved">{t.status.reserved}</MenuItem>
+                <MenuItem value="sold">{t.status.sold}</MenuItem>
               </TextField>
             </Grid>
+
+            {/* Location Section */}
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.useDropdown}
+                    onChange={(e) =>
+                      setFormData({ ...formData, useDropdown: e.target.checked, district: '', location: '' })
+                    }
+                  />
+                }
+                label="Use Mersin District Dropdown"
+              />
+            </Grid>
+
+            {formData.useDropdown ? (
+              <Grid item xs={12}>
+                <TextField
+                  label="District"
+                  fullWidth
+                  select
+                  value={formData.district}
+                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                >
+                  <MenuItem value="">Select District</MenuItem>
+                  {mersinDistricts.map((district) => (
+                    <MenuItem key={district} value={district}>
+                      {district}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : (
+              <Grid item xs={12}>
+                <TextField
+                  label="Location (Manual Entry)"
+                  fullWidth
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="e.g., Mersin - Tece"
+                />
+              </Grid>
+            )}
+            
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Tags</InputLabel>
+                <InputLabel>{t.admin.tags}</InputLabel>
                 <Select
                   multiple
                   value={formData.tags}
                   onChange={(e: SelectChangeEvent<string[]>) =>
                     setFormData({ ...formData, tags: e.target.value as string[] })
                   }
-                  input={<OutlinedInput label="Tags" />}
+                  input={<OutlinedInput label={t.admin.tags} />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
@@ -384,19 +537,19 @@ const ItemsManager = () => {
             </Grid>
             <Grid item xs={12}>
               <Button variant="outlined" component="label" fullWidth>
-                Upload Images
+                {t.admin.uploadImages}
                 <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
               </Button>
               {imageFiles.length > 0 && (
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  {imageFiles.length} file(s) selected
+                  {imageFiles.length} {t.admin.filesSelected}
                 </Typography>
               )}
             </Grid>
             {formData.images.length > 0 && (
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Current Images
+                  {t.admin.currentImages}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {formData.images.map((img, idx) => (
@@ -428,9 +581,9 @@ const ItemsManager = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t.admin.cancel}</Button>
           <Button onClick={handleSubmit} variant="contained" disabled={uploading}>
-            {uploading ? <CircularProgress size={24} /> : editingItem ? 'Update' : 'Create'}
+            {uploading ? <CircularProgress size={24} /> : editingItem ? t.admin.update : t.admin.create}
           </Button>
         </DialogActions>
       </Dialog>

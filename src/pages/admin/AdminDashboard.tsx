@@ -1,5 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Box, Container, Tabs, Tab } from '@mui/material';
+import { useLanguage } from '../../contexts/LanguageContext';
 import ItemsManager from '../../components/admin/ItemsManager';
 import CategoriesManager from '../../components/admin/CategoriesManager';
 import TagsManager from '../../components/admin/TagsManager';
@@ -8,6 +9,7 @@ import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
 
 const AdminDashboard = () => {
   const location = useLocation();
+  const { t } = useLanguage();
   const getCurrentTab = () => {
     const path = location.pathname;
     if (path.includes('/admin/categories')) return '/admin/categories';
@@ -22,11 +24,11 @@ const AdminDashboard = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Container maxWidth="lg">
           <Tabs value={getCurrentTab()}>
-            <Tab label="Items" value="/admin" component={Link} to="/admin" />
-            <Tab label="Categories" value="/admin/categories" component={Link} to="/admin/categories" />
-            <Tab label="Tags" value="/admin/tags" component={Link} to="/admin/tags" />
-            <Tab label="Inquiries" value="/admin/inquiries" component={Link} to="/admin/inquiries" />
-            <Tab label="Analytics" value="/admin/analytics" component={Link} to="/admin/analytics" />
+            <Tab label={t.admin.items} value="/admin" component={Link} to="/admin" />
+            <Tab label={t.admin.categories} value="/admin/categories" component={Link} to="/admin/categories" />
+            <Tab label={t.admin.tags} value="/admin/tags" component={Link} to="/admin/tags" />
+            <Tab label={t.admin.inquiries} value="/admin/inquiries" component={Link} to="/admin/inquiries" />
+            <Tab label={t.admin.analytics} value="/admin/analytics" component={Link} to="/admin/analytics" />
           </Tabs>
         </Container>
       </Box>

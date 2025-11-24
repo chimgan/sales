@@ -16,17 +16,20 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { doc, getDoc, updateDoc, collection, addDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, addDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Item, Inquiry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useSnackbar } from 'notistack';
+import { formatPrice, getCurrencySymbol } from '../utils/currency';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const ItemDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, signInWithGoogle } = useAuth();
+  const { t } = useLanguage();
   const { enqueueSnackbar } = useSnackbar();
   
   const [item, setItem] = useState<Item | null>(null);
@@ -64,12 +67,12 @@ const ItemDetailPage = () => {
           views: increment(1),
         });
       } else {
-        enqueueSnackbar('Item not found', { variant: 'error' });
+        enqueueSnackbar(t.itemDetail.itemNotFound, { variant: 'error' });
         navigate('/');
       }
     } catch (error) {
       console.error('Error fetching item:', error);
-      enqueueSnackbar('Error loading item', { variant: 'error' });
+      enqueueSnackbar(t.itemDetail.errorLoadingItem, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -77,34 +80,69 @@ const ItemDetailPage = () => {
 
   const handleInquirySubmit = async () => {
     if (!inquiryForm.name || !inquiryForm.comment) {
-      enqueueSnackbar('Please fill in required fields', { variant: 'warning' });
+      enqueueSnackbar(t.itemDetail.fillRequiredFields, { variant: 'warning' });
       return;
     }
 
     if (!inquiryForm.email && !inquiryForm.phone) {
-      enqueueSnackbar('Please provide email or phone number', { variant: 'warning' });
+      enqueueSnackbar(t.itemDetail.provideEmailOrPhone, { variant: 'warning' });
+      return;
+    }
+
+    if (!item) {
+      enqueueSnackbar(t.itemDetail.errorSendingInquiry, { variant: 'error' });
       return;
     }
 
     try {
-      const inquiry: Omit<Inquiry, 'id'> = {
+      const ownerId = item.createdBy;
+      const participants = [ownerId, user?.uid].filter((participant): participant is string => Boolean(participant));
+
+      const inquiryPayload: any = {
         itemId: id!,
-        userId: user?.uid,
+        itemTitle: item.title,
+        ownerId,
+        ownerName: item.creatorName || 'Admin',
         userName: inquiryForm.name,
-        userEmail: inquiryForm.email || undefined,
-        userPhone: inquiryForm.phone || undefined,
         comment: inquiryForm.comment,
         createdAt: new Date(),
+        updatedAt: new Date(),
         status: 'new',
+        lastMessageText: inquiryForm.comment,
+        participants,
       };
 
-      await addDoc(collection(db, 'inquiries'), inquiry);
-      enqueueSnackbar('Inquiry sent successfully!', { variant: 'success' });
+      if (user?.uid) {
+        inquiryPayload.userId = user.uid;
+      }
+      if (inquiryForm.email) {
+        inquiryPayload.userEmail = inquiryForm.email;
+      }
+      if (inquiryForm.phone) {
+        inquiryPayload.userPhone = inquiryForm.phone;
+      }
+
+      console.log('Submitting inquiry:', inquiryPayload);
+      const inquiryRef = await addDoc(collection(db, 'inquiries'), inquiryPayload);
+
+      await addDoc(collection(db, 'inquiries', inquiryRef.id, 'messages'), {
+        senderId: user?.uid || 'guest',
+        senderName: inquiryForm.name,
+        text: inquiryForm.comment,
+        createdAt: serverTimestamp(),
+      });
+
+      await updateDoc(inquiryRef, {
+        lastMessageAt: serverTimestamp(),
+      });
+
+      enqueueSnackbar(t.itemDetail.inquirySentSuccess, { variant: 'success' });
       setInquiryDialogOpen(false);
       setInquiryForm({ name: '', email: '', phone: '', comment: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting inquiry:', error);
-      enqueueSnackbar('Error sending inquiry', { variant: 'error' });
+      console.error('Error details:', error.message, error.code);
+      enqueueSnackbar(t.itemDetail.errorSendingInquiry, { variant: 'error' });
     }
   };
 
@@ -114,7 +152,7 @@ const ItemDetailPage = () => {
         await signInWithGoogle();
         setInquiryDialogOpen(true);
       } catch (error) {
-        enqueueSnackbar('Sign in required to make inquiries', { variant: 'info' });
+        enqueueSnackbar(t.itemDetail.signInRequired, { variant: 'info' });
       }
     } else {
       setInquiryForm({
@@ -154,11 +192,11 @@ const ItemDetailPage = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'on_sale':
-        return 'Available';
+        return t.status.onSale;
       case 'reserved':
-        return 'Reserved';
+        return t.status.reserved;
       case 'sold':
-        return 'Sold';
+        return t.status.sold;
       default:
         return status;
     }
@@ -171,7 +209,7 @@ const ItemDetailPage = () => {
         onClick={() => navigate('/')}
         sx={{ mb: 3 }}
       >
-        Back to Marketplace
+        {t.itemDetail.backToHome}
       </Button>
 
       <Grid container spacing={4}>
@@ -213,36 +251,42 @@ const ItemDetailPage = () => {
             <Chip label={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline', mb: 3 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+            📝 Created by: <strong>{item.creatorName || 'Admin'}</strong>
+          </Typography>
+
+          {item.location && (
+            <Typography variant="h6" color="primary.main" sx={{ mb: 2, fontWeight: 600 }}>
+              📍 {item.location}
+            </Typography>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
             {item.discountPrice ? (
               <>
-                <Typography variant="h3" color="secondary" fontWeight={700}>
-                  ${item.discountPrice}
+                <Typography variant="h3" color="primary" fontWeight={700}>
+                  {formatPrice(item.discountPrice, item.currency || 'USD')}
                 </Typography>
                 <Typography variant="h5" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                  ${item.price}
+                  {formatPrice(item.price, item.currency || 'USD')}
                 </Typography>
                 <Chip
-                  label={`Save $${(item.price - item.discountPrice).toFixed(2)}`}
+                  label={`${t.common.save || 'Save'} ${getCurrencySymbol(item.currency || 'USD')}${(item.price - item.discountPrice).toFixed(2)}`}
                   color="secondary"
                   size="small"
                 />
               </>
             ) : (
               <Typography variant="h3" color="primary" fontWeight={700}>
-                ${item.price}
+                {formatPrice(item.price, item.currency || 'USD')}
               </Typography>
             )}
           </Box>
 
-          <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-            {item.description}
-          </Typography>
-
           <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Category
+                {t.itemDetail.category}
               </Typography>
               <Typography variant="body1" sx={{ mb: 2 }}>
                 {item.category}
@@ -251,7 +295,7 @@ const ItemDetailPage = () => {
               {item.tags && item.tags.length > 0 && (
                 <>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Tags
+                    {t.itemDetail.tags}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {item.tags.map((tag, idx) => (
@@ -271,53 +315,55 @@ const ItemDetailPage = () => {
             onClick={handleAuthAndInquiry}
             sx={{ mb: 2 }}
           >
-            {item.status === 'sold' ? 'Sold Out' : 'Contact Seller'}
+            {item.status === 'sold' ? t.status.sold : t.itemDetail.inquireAbout}
           </Button>
 
           <Typography variant="caption" color="text.secondary">
-            Views: {item.views || 0}
+            {t.common.views}: {item.views || 0}
           </Typography>
         </Grid>
       </Grid>
 
       {/* Inquiry Dialog */}
       <Dialog open={inquiryDialogOpen} onClose={() => setInquiryDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Contact Seller</DialogTitle>
+        <DialogTitle>{t.itemDetail.inquireAbout}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField
-              label="Your Name *"
+              label={t.itemDetail.yourName}
               value={inquiryForm.name}
               onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
               fullWidth
+              required
             />
             <TextField
-              label="Email"
+              label={t.itemDetail.yourEmail}
               type="email"
               value={inquiryForm.email}
               onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Phone"
+              label={t.itemDetail.phoneOptional}
               value={inquiryForm.phone}
               onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Message *"
+              label={t.itemDetail.yourMessage}
               multiline
               rows={4}
               value={inquiryForm.comment}
               onChange={(e) => setInquiryForm({ ...inquiryForm, comment: e.target.value })}
               fullWidth
+              required
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setInquiryDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setInquiryDialogOpen(false)}>{t.itemDetail.cancel}</Button>
           <Button onClick={handleInquirySubmit} variant="contained">
-            Send Inquiry
+            {t.itemDetail.submit}
           </Button>
         </DialogActions>
       </Dialog>

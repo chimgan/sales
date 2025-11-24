@@ -23,9 +23,11 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import { db } from '../../config/firebase';
 import { Category } from '../../types';
 import { useSnackbar } from 'notistack';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const CategoriesManager = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -49,7 +51,7 @@ const CategoriesManager = () => {
       );
     } catch (error) {
       console.error('Error fetching categories:', error);
-      enqueueSnackbar('Error loading categories', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorLoadingData, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ const CategoriesManager = () => {
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.slug) {
-      enqueueSnackbar('Please fill in all fields', { variant: 'warning' });
+      enqueueSnackbar(t.admin.fillAllFields || 'Please fill in all fields', { variant: 'warning' });
       return;
     }
 
@@ -98,20 +100,20 @@ const CategoriesManager = () => {
 
       if (editingCategory) {
         await updateDoc(doc(db, 'categories', editingCategory.id), categoryData);
-        enqueueSnackbar('Category updated successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.categoryUpdated, { variant: 'success' });
       } else {
         await addDoc(collection(db, 'categories'), {
           ...categoryData,
           createdAt: new Date(),
         });
-        enqueueSnackbar('Category created successfully', { variant: 'success' });
+        enqueueSnackbar(t.admin.categoryAdded, { variant: 'success' });
       }
 
       await fetchCategories();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving category:', error);
-      enqueueSnackbar('Error saving category', { variant: 'error' });
+      enqueueSnackbar(t.common.error, { variant: 'error' });
     }
   };
 
@@ -120,11 +122,11 @@ const CategoriesManager = () => {
 
     try {
       await deleteDoc(doc(db, 'categories', id));
-      enqueueSnackbar('Category deleted successfully', { variant: 'success' });
+      enqueueSnackbar(t.admin.categoryDeleted, { variant: 'success' });
       await fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
-      enqueueSnackbar('Error deleting category', { variant: 'error' });
+      enqueueSnackbar(t.admin.errorDeleting, { variant: 'error' });
     }
   };
 
@@ -139,9 +141,9 @@ const CategoriesManager = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Manage Categories</Typography>
+        <Typography variant="h4">{t.admin.manageCategories}</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
-          Add Category
+          {t.admin.addCategory}
         </Button>
       </Box>
 
@@ -149,9 +151,9 @@ const CategoriesManager = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Slug</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{t.admin.name}</TableCell>
+              <TableCell>{t.admin.slug}</TableCell>
+              <TableCell>{t.admin.actions}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -175,22 +177,22 @@ const CategoriesManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+        <DialogTitle>{editingCategory ? t.admin.editCategory : t.admin.addCategory}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField
-              label="Name"
+              label={t.admin.name}
               fullWidth
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
             />
-            <TextField label="Slug" fullWidth value={formData.slug} disabled />
+            <TextField label={t.admin.slug} fullWidth value={formData.slug} disabled />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>{t.admin.cancel}</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {editingCategory ? 'Update' : 'Create'}
+            {editingCategory ? t.admin.update : t.admin.create}
           </Button>
         </DialogActions>
       </Dialog>

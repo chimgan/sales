@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import { useLanguage } from '../contexts/LanguageContext';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LoginIcon from '@mui/icons-material/Login';
+import LanguageSelector from './LanguageSelector';
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { isAdminAuthenticated, logout: adminLogout } = useAdminAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -34,20 +37,33 @@ const Navbar = () => {
   return (
     <AppBar position="sticky">
       <Toolbar>
-        <ShoppingBagIcon sx={{ mr: 2 }} />
-        <Typography
-          variant="h6"
+        <Box
           component={Link}
           to="/"
           sx={{
-            flexGrow: 1,
+            display: 'flex',
+            alignItems: 'center',
             textDecoration: 'none',
             color: 'inherit',
-            fontWeight: 700,
           }}
         >
-          Tece Marketplace
-        </Typography>
+          <Box
+            component="img"
+            src="/sales_logo.png"
+            alt="Tece Logo"
+            sx={{ height: 40, mr: 2 }}
+          />
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+            }}
+          >
+            {t.navbar.title}
+          </Typography>
+        </Box>
+
+        <Box sx={{ flexGrow: 1 }} />
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {isAdminAuthenticated && (
@@ -59,13 +75,15 @@ const Navbar = () => {
                 component={Link}
                 to="/admin"
               >
-                Admin Panel
+                {t.navbar.adminPanel}
               </Button>
               <Button color="inherit" onClick={handleAdminLogout}>
-                Admin Logout
+                {t.navbar.adminLogout}
               </Button>
             </>
           )}
+
+          <LanguageSelector />
 
           {user ? (
             <>
@@ -74,20 +92,28 @@ const Navbar = () => {
               </IconButton>
               <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
                 <MenuItem component={Link} to="/profile" onClick={handleClose}>
-                  My Profile
+                  {t.navbar.myProfile}
                 </MenuItem>
-                <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
+                <MenuItem component={Link} to="/my-ads" onClick={handleClose}>
+                  {t.navbar.myAdvertisements}
+                </MenuItem>
+                <MenuItem onClick={handleSignOut}>{t.navbar.signOut}</MenuItem>
               </Menu>
             </>
           ) : (
             <Button
               color="inherit"
               variant="outlined"
-              sx={{ borderColor: 'white', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}
+              startIcon={<LoginIcon />}
               component={Link}
-              to="/admin/login"
+              to="/"
+              onClick={() => {
+                // Will be handled by HomePage's AuthDialog
+                window.dispatchEvent(new CustomEvent('openAuthDialog'));
+              }}
+              sx={{ borderColor: 'white', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}
             >
-              Admin Login
+              {t.navbar.signIn}
             </Button>
           )}
         </Box>
