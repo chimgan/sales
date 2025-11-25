@@ -23,8 +23,14 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   collection,
   getDocs,
@@ -34,6 +40,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  deleteDoc,
   DocumentData,
   QueryDocumentSnapshot,
   Query,
@@ -66,6 +73,7 @@ type FormState = {
   location: string;
   district: string;
   useDropdown: boolean;
+  status: ItemStatus;
 };
 
 type InputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -96,6 +104,8 @@ const MyAdvertisementsPage = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [conversationActionLoading, setConversationActionLoading] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   const defaultFormState: FormState = {
     title: '',
@@ -108,10 +118,12 @@ const MyAdvertisementsPage = () => {
     location: '',
     district: '',
     useDropdown: true,
+    status: 'on_sale',
   };
 
   const [formData, setFormData] = useState<FormState>({ ...defaultFormState });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const mersinDistricts = getMersinDistricts();
   const currentUserId = user?.uid ?? '';
   const unreadConversationCount = useMemo(
@@ -257,6 +269,30 @@ const MyAdvertisementsPage = () => {
   const resetForm = () => {
     setFormData({ ...defaultFormState });
     setImageFiles([]);
+    setEditingItem(null);
+    setExistingImages([]);
+  };
+
+  const startEditingItem = (item: Item) => {
+    setEditingItem(item);
+    setFormData({
+      title: item.title,
+      description: item.description,
+      price: String(item.price),
+      discountPrice: item.discountPrice ? String(item.discountPrice) : '',
+      currency: item.currency || 'USD',
+      category: item.category,
+      tags: item.tags || [],
+      location: item.location || '',
+      district: item.location?.startsWith('Mersin')
+        ? item.location.split(' - ')[1] || ''
+        : '',
+      useDropdown: item.location?.startsWith('Mersin') ?? true,
+      status: item.status || 'on_sale',
+    });
+    setImageFiles([]);
+    setExistingImages(item.images || []);
+    setTabValue('listings');
   };
 
   const getConversationTimeValue = (conversation: Inquiry) =>
@@ -549,17 +585,17 @@ const MyAdvertisementsPage = () => {
       return;
     }
 
-    if (dailyLimit !== null && todayCount >= dailyLimit) {
+    if (!editingItem && dailyLimit !== null && todayCount >= dailyLimit) {
       enqueueSnackbar(t.myAds.limitReached, { variant: 'warning' });
       return;
     }
 
     try {
       setSaving(true);
-      let imageUrls: string[] = [];
-
+      let combinedImages = [...existingImages];
       if (imageFiles.length > 0) {
-        imageUrls = await uploadMultipleToCloudinary(imageFiles);
+        const uploaded = await uploadMultipleToCloudinary(imageFiles);
+        combinedImages = [...combinedImages, ...uploaded];
       }
 
       const locationStr = formData.useDropdown
@@ -582,8 +618,8 @@ const MyAdvertisementsPage = () => {
         currency: formData.currency,
         category: formData.category,
         tags: formData.tags,
-        status: 'on_sale',
-        images: imageUrls,
+        status: formData.status,
+        images: combinedImages,
         location: locationStr.trim(),
         views: 0,
         createdAt: now,
@@ -599,9 +635,19 @@ const MyAdvertisementsPage = () => {
         }
       }
 
-      await addDoc(collection(db, 'items'), payload);
+      if (editingItem) {
+        delete payload.views;
+        delete payload.createdAt;
+        await updateDoc(doc(db, 'items', editingItem.id), {
+          ...payload,
+          updatedAt: now,
+        });
+        enqueueSnackbar(t.myAds.updateSuccess, { variant: 'success' });
+      } else {
+        await addDoc(collection(db, 'items'), payload);
+        enqueueSnackbar(t.myAds.saveSuccess, { variant: 'success' });
+      }
 
-      enqueueSnackbar(t.myAds.saveSuccess, { variant: 'success' });
       resetForm();
       await fetchUserItems();
     } catch (error) {
@@ -609,6 +655,26 @@ const MyAdvertisementsPage = () => {
       enqueueSnackbar(t.common.error, { variant: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const confirmDeleteItem = (itemId: string) => {
+    setDeletingItemId(itemId);
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deletingItemId) return;
+    try {
+      setSaving(true);
+      await deleteDoc(doc(db, 'items', deletingItemId));
+      enqueueSnackbar(t.myAds.deleteSuccess, { variant: 'success' });
+      await fetchUserItems();
+    } catch (error) {
+      console.error('Error deleting advertisement:', error);
+      enqueueSnackbar(t.common.error, { variant: 'error' });
+    } finally {
+      setSaving(false);
+      setDeletingItemId(null);
     }
   };
 
@@ -684,7 +750,7 @@ const MyAdvertisementsPage = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  {t.myAds.createButton}
+                  {editingItem ? t.myAds.formTitleEdit : t.myAds.createButton}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
@@ -737,6 +803,21 @@ const MyAdvertisementsPage = () => {
                       <MenuItem value="USD">{t.currency.USD}</MenuItem>
                       <MenuItem value="EUR">{t.currency.EUR}</MenuItem>
                       <MenuItem value="RUB">{t.currency.RUB}</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label={`${t.admin.status} ${t.admin.required}`}
+                      fullWidth
+                      select
+                      value={formData.status}
+                      onChange={(e: SelectChangeEvent<string>) =>
+                        setFormData({ ...formData, status: e.target.value as ItemStatus })
+                      }
+                    >
+                      <MenuItem value="on_sale">{t.status.onSale}</MenuItem>
+                      <MenuItem value="reserved">{t.status.reserved}</MenuItem>
+                      <MenuItem value="sold">{t.status.sold}</MenuItem>
                     </TextField>
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -837,16 +918,74 @@ const MyAdvertisementsPage = () => {
                       </Typography>
                     )}
                   </Grid>
+                  {existingImages.length > 0 && (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        {t.admin.currentImages}
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {existingImages.map((image: string) => (
+                          <Box
+                            key={image}
+                            sx={{
+                              position: 'relative',
+                              width: 90,
+                              height: 90,
+                              borderRadius: 2,
+                              overflow: 'hidden',
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            }}
+                          >
+                            <img
+                              src={image}
+                              alt="existing"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                setExistingImages((prev: string[]) => prev.filter((existing: string) => existing !== image))
+                              }
+                              sx={{
+                                position: 'absolute',
+                                top: 2,
+                                right: 2,
+                                bgcolor: 'rgba(0,0,0,0.5)',
+                                color: 'white',
+                                '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <Button
                       variant="contained"
                       fullWidth
                       onClick={handleSubmit}
-                      disabled={saving || isLimitReached || isPostingBlocked}
+                      disabled={saving || (!editingItem && (isLimitReached || isPostingBlocked))}
                     >
-                      {saving ? <CircularProgress size={24} color="inherit" /> : t.myAds.formSubmitCreate}
+                      {saving ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : editingItem ? (
+                        t.myAds.formSubmitUpdate
+                      ) : (
+                        t.myAds.formSubmitCreate
+                      )}
                     </Button>
                   </Grid>
+                  {editingItem && (
+                    <Grid item xs={12}>
+                      <Button variant="text" fullWidth onClick={resetForm} disabled={saving}>
+                        {t.myAds.formCancel}
+                      </Button>
+                    </Grid>
+                  )}
                 </Grid>
               </CardContent>
             </Card>
@@ -937,6 +1076,22 @@ const MyAdvertisementsPage = () => {
                                   )}
                                 </Button>
                               )}
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => startEditingItem(item)}
+                              >
+                                {t.common.edit}
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => confirmDeleteItem(item.id)}
+                              >
+                                {t.common.delete}
+                              </Button>
                             </Box>
                           </Box>
                         </Box>
@@ -1158,6 +1313,20 @@ const MyAdvertisementsPage = () => {
           </Grid>
         </Grid>
       )}
+      <Dialog open={Boolean(deletingItemId)} onClose={() => setDeletingItemId(null)}>
+        <DialogTitle>{t.myAds.deleteConfirm}</DialogTitle>
+        <DialogContent>
+          <Typography>{t.myAds.deleteConfirmText}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeletingItemId(null)} disabled={saving}>
+            {t.common.cancel}
+          </Button>
+          <Button onClick={handleDeleteItem} color="error" disabled={saving}>
+            {saving ? <CircularProgress size={20} color="inherit" /> : t.common.delete}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
