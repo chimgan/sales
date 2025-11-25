@@ -72,4 +72,6 @@ export interface UserProfile {
   createdAt: Date;
   language?: 'ru' | 'en' | 'tr';
   blockedFromPosting?: boolean;
+  homeViewMode?: 'grid' | 'list';
+  homeItemsPerPage?: 10 | 15 | 30;
 }

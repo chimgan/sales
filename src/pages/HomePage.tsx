@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   Container,
   Grid,
@@ -16,9 +16,10 @@ import {
   Paper,
   ToggleButton,
   ToggleButtonGroup,
+  Pagination,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { collection, query, getDocs, orderBy, where } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Item, Category, Tag } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,8 +31,12 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { getMersinDistricts } from '../data/locations';
 
+type ViewMode = 'grid' | 'list';
+type ItemsPerPageOption = 10 | 15 | 30;
+const ITEMS_PER_PAGE_OPTIONS: ItemsPerPageOption[] = [10, 15, 30];
+
 const HomePage = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const { t } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -41,7 +46,9 @@ const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDistrict, setSelectedDistrict] = useState('all');
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPageOption>(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const districts = getMersinDistricts();
   const [showWelcome, setShowWelcome] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -57,6 +64,34 @@ const HomePage = () => {
     window.addEventListener('openAuthDialog', handleOpenAuthDialog);
     return () => window.removeEventListener('openAuthDialog', handleOpenAuthDialog);
   }, []);
+
+  useEffect(() => {
+    if (userProfile?.homeViewMode) {
+      setViewMode(userProfile.homeViewMode);
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const savedView = localStorage.getItem('homeViewMode');
+    if (savedView === 'grid' || savedView === 'list') {
+      setViewMode(savedView);
+    }
+  }, [userProfile?.homeViewMode]);
+
+  useEffect(() => {
+    if (userProfile?.homeItemsPerPage) {
+      setItemsPerPage(userProfile.homeItemsPerPage);
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const savedItemsPerPage = Number(localStorage.getItem('homeItemsPerPage')) as ItemsPerPageOption;
+    if (ITEMS_PER_PAGE_OPTIONS.includes(savedItemsPerPage)) {
+      setItemsPerPage(savedItemsPerPage);
+    }
+  }, [userProfile?.homeItemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedDistrict]);
 
   const fetchData = async () => {
     try {
@@ -95,15 +130,67 @@ const HomePage = () => {
     }
   };
 
-  const filteredItems = items.filter((item) => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesDistrict =
-      selectedDistrict === 'all' ||
-      (item.location && item.location.toLowerCase().includes(selectedDistrict.toLowerCase()));
-    return matchesSearch && matchesCategory && matchesDistrict;
-  });
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesDistrict =
+        selectedDistrict === 'all' ||
+        (item.location && item.location.toLowerCase().includes(selectedDistrict.toLowerCase()));
+      return matchesSearch && matchesCategory && matchesDistrict;
+    });
+  }, [items, searchTerm, selectedCategory, selectedDistrict]);
+
+  useEffect(() => {
+    setCurrentPage((prev) => {
+      const maxPage = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage) || 1);
+      return prev > maxPage ? maxPage : prev;
+    });
+  }, [filteredItems.length, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    (currentPage - 1) * itemsPerPage + itemsPerPage,
+  );
+  const shouldShowPagination = totalPages > 1;
+
+  const persistViewPreferences = async (
+    updates: Partial<{ homeViewMode: ViewMode; homeItemsPerPage: ItemsPerPageOption }>,
+  ) => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, updates);
+    } catch (error) {
+      console.error('Error saving homepage preferences:', error);
+    }
+  };
+
+  const handleViewModeChange = async (
+    _event: React.MouseEvent<HTMLElement>,
+    newView: ViewMode | null,
+  ) => {
+    if (!newView) return;
+    setViewMode(newView);
+    setCurrentPage(1);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('homeViewMode', newView);
+    }
+    await persistViewPreferences({ homeViewMode: newView });
+  };
+
+  const handleItemsPerPageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const value = Number(event.target.value) as ItemsPerPageOption;
+    if (!ITEMS_PER_PAGE_OPTIONS.includes(value)) return;
+    setItemsPerPage(value);
+    setCurrentPage(1);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('homeItemsPerPage', value.toString());
+    }
+    await persistViewPreferences({ homeItemsPerPage: value });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -198,23 +285,48 @@ const HomePage = () => {
       </Box>
 
       {/* Filters and View Toggle */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', md: 'center' },
+          gap: 2,
+          mb: 2,
+        }}
+      >
         <Typography variant="h5" fontWeight={600}>
-          {t.home.category}
+          {t.home.viewOptions}
         </Typography>
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(e, newView) => newView && setViewMode(newView)}
-          size="small"
-        >
-          <ToggleButton value="grid" aria-label="grid view">
-            <ViewModuleIcon />
-          </ToggleButton>
-          <ToggleButton value="list" aria-label="list view">
-            <ViewListIcon />
-          </ToggleButton>
-        </ToggleButtonGroup>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+          <TextField
+            select
+            size="small"
+            label={t.home.itemsPerPage}
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            sx={{ minWidth: 140 }}
+          >
+            {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={handleViewModeChange}
+            size="small"
+          >
+            <ToggleButton value="grid" aria-label="grid view">
+              <ViewModuleIcon />
+            </ToggleButton>
+            <ToggleButton value="list" aria-label="list view">
+              <ViewListIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Box>
 
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -272,7 +384,7 @@ const HomePage = () => {
         </Box>
       ) : viewMode === 'grid' ? (
         <Grid container spacing={3}>
-          {filteredItems.map((item) => (
+          {paginatedItems.map((item) => (
             <Grid item xs={12} sm={6} md={4} key={item.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardMedia
@@ -341,7 +453,7 @@ const HomePage = () => {
         </Grid>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {filteredItems.map((item) => (
+          {paginatedItems.map((item) => (
             <Card key={item.id} sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
               <CardMedia
                 component="img"
@@ -410,6 +522,18 @@ const HomePage = () => {
               </Box>
             </Card>
           ))}
+        </Box>
+      )}
+
+      {filteredItems.length > 0 && shouldShowPagination && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_event, page) => setCurrentPage(page)}
+            color="primary"
+            shape="rounded"
+          />
         </Box>
       )}
 
