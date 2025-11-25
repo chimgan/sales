@@ -10,17 +10,20 @@ import {
   Grid,
   List,
   ListItem,
-  ListItemText,
   Chip,
   CircularProgress,
+  TextField,
+  Divider,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Inquiry } from '../types';
 import { format } from 'date-fns';
+import { updateProfile as updateFirebaseProfile } from 'firebase/auth';
+import { useSnackbar } from 'notistack';
 
 const ProfilePage = () => {
   const { user, userProfile, signInWithGoogle, signOut } = useAuth();
@@ -28,6 +31,15 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+  const [profileForm, setProfileForm] = useState({
+    displayName: user?.displayName || userProfile?.displayName || '',
+    phoneNumber: userProfile?.phoneNumber || '',
+    telegramUsername: userProfile?.telegramUsername || '',
+    whatsappNumber: userProfile?.whatsappNumber || '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -36,6 +48,15 @@ const ProfilePage = () => {
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    setProfileForm({
+      displayName: user?.displayName || userProfile?.displayName || '',
+      phoneNumber: userProfile?.phoneNumber || '',
+      telegramUsername: userProfile?.telegramUsername || '',
+      whatsappNumber: userProfile?.whatsappNumber || '',
+    });
+  }, [user?.displayName, userProfile?.phoneNumber, userProfile?.telegramUsername, userProfile?.whatsappNumber, userProfile?.displayName]);
 
   const fetchInquiries = async () => {
     try {
@@ -56,6 +77,43 @@ const ProfilePage = () => {
       console.error('Error fetching inquiries:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resetProfileForm = () => {
+    setProfileForm({
+      displayName: user?.displayName || userProfile?.displayName || '',
+      phoneNumber: userProfile?.phoneNumber || '',
+      telegramUsername: userProfile?.telegramUsername || '',
+      whatsappNumber: userProfile?.whatsappNumber || '',
+    });
+  };
+
+  const handleProfileSave = async () => {
+    if (!user) return;
+    const trimmedName = profileForm.displayName.trim();
+    if (!trimmedName) {
+      enqueueSnackbar(t.profile.displayNameRequired, { variant: 'warning' });
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        displayName: trimmedName,
+        phoneNumber: profileForm.phoneNumber.trim() || null,
+        telegramUsername: profileForm.telegramUsername.trim() || null,
+        whatsappNumber: profileForm.whatsappNumber.trim() || null,
+      });
+      await updateFirebaseProfile(user, { displayName: trimmedName });
+      enqueueSnackbar(t.profile.updateSuccess, { variant: 'success' });
+      setEditingProfile(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      enqueueSnackbar(t.profile.updateError, { variant: 'error' });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -111,15 +169,94 @@ const ProfilePage = () => {
                     {user.email}
                   </Typography>
                 </Box>
-                {userProfile?.phoneNumber && (
-                  <Typography variant="body2" color="text.secondary">
-                    {userProfile.phoneNumber}
-                  </Typography>
+                <Divider sx={{ my: 2 }} />
+                {editingProfile ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {t.profile.contactInfo}
+                    </Typography>
+                    <TextField
+                      label={t.profile.displayNameLabel}
+                      value={profileForm.displayName}
+                      onChange={(e) => setProfileForm((prev) => ({ ...prev, displayName: e.target.value }))}
+                      fullWidth
+                      required
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {t.profile.recommendedFields}
+                    </Typography>
+                    <TextField
+                      label={t.profile.phoneLabel}
+                      value={profileForm.phoneNumber}
+                      onChange={(e) => setProfileForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+                      fullWidth
+                    />
+                    <TextField
+                      label={t.profile.telegramLabel}
+                      value={profileForm.telegramUsername}
+                      onChange={(e) => setProfileForm((prev) => ({ ...prev, telegramUsername: e.target.value }))}
+                      fullWidth
+                      placeholder="@username"
+                    />
+                    <TextField
+                      label={t.profile.whatsappLabel}
+                      value={profileForm.whatsappNumber}
+                      onChange={(e) => setProfileForm((prev) => ({ ...prev, whatsappNumber: e.target.value }))}
+                      fullWidth
+                      placeholder="+90555..."
+                    />
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        variant="contained"
+                        onClick={handleProfileSave}
+                        disabled={savingProfile}
+                      >
+                        {savingProfile ? t.common.loading : t.profile.saveProfile}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingProfile(false);
+                          resetProfileForm();
+                        }}
+                        disabled={savingProfile}
+                      >
+                        {t.profile.cancelEdit}
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {t.profile.contactInfo}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {t.profile.contactInfoDescription}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography variant="body2">
+                        <strong>{t.profile.phoneLabel}:</strong> {userProfile?.phoneNumber || t.profile.notProvided}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{t.profile.telegramLabel}:</strong> {userProfile?.telegramUsername || t.profile.notProvided}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{t.profile.whatsappLabel}:</strong> {userProfile?.whatsappNumber || t.profile.notProvided}
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ mt: 3 }}
+                      onClick={() => setEditingProfile(true)}
+                    >
+                      {t.profile.editProfile}
+                    </Button>
+                  </Box>
                 )}
                 <Button
                   variant="outlined"
                   fullWidth
-                  sx={{ mt: 3 }}
+                  sx={{ mt: 2 }}
                   onClick={async () => {
                     await signOut();
                     navigate('/');

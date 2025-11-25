@@ -68,6 +68,8 @@ export interface UserProfile {
   displayName: string;
   photoURL?: string;
   phoneNumber?: string;
+  telegramUsername?: string;
+  whatsappNumber?: string;
   inquiries: string[];
   createdAt: Date;
   language?: 'ru' | 'en' | 'tr';

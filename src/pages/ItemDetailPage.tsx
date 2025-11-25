@@ -18,12 +18,15 @@ import {
 } from '@mui/material';
 import { doc, getDoc, updateDoc, collection, addDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Item, Inquiry } from '../types';
+import { Item, Inquiry, UserProfile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSnackbar } from 'notistack';
 import { formatPrice, getCurrencySymbol } from '../utils/currency';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PhoneIcon from '@mui/icons-material/Phone';
+import TelegramIcon from '@mui/icons-material/Telegram';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 
 const ItemDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +45,7 @@ const ItemDetailPage = () => {
     phone: '',
     comment: '',
   });
+  const [ownerContact, setOwnerContact] = useState<Pick<UserProfile, 'phoneNumber' | 'telegramUsername' | 'whatsappNumber'> | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -52,6 +56,7 @@ const ItemDetailPage = () => {
   const fetchItem = async () => {
     try {
       setLoading(true);
+      setOwnerContact(null);
       const itemDoc = await getDoc(doc(db, 'items', id!));
       if (itemDoc.exists()) {
         const itemData = {
@@ -61,7 +66,10 @@ const ItemDetailPage = () => {
           updatedAt: itemDoc.data().updatedAt?.toDate(),
         } as Item;
         setItem(itemData);
-        
+        if (itemData.createdBy) {
+          loadOwnerContact(itemData.createdBy);
+        }
+
         // Increment views
         await updateDoc(doc(db, 'items', id!), {
           views: increment(1),
@@ -75,6 +83,25 @@ const ItemDetailPage = () => {
       enqueueSnackbar(t.itemDetail.errorLoadingItem, { variant: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOwnerContact = async (ownerId: string) => {
+    try {
+      const ownerSnap = await getDoc(doc(db, 'users', ownerId));
+      if (!ownerSnap.exists()) {
+        setOwnerContact(null);
+        return;
+      }
+      const data = ownerSnap.data() as Pick<UserProfile, 'phoneNumber' | 'telegramUsername' | 'whatsappNumber'>;
+      setOwnerContact({
+        phoneNumber: data.phoneNumber || undefined,
+        telegramUsername: data.telegramUsername || undefined,
+        whatsappNumber: data.whatsappNumber || undefined,
+      });
+    } catch (error) {
+      console.error('Error loading owner contact info:', error);
+      setOwnerContact(null);
     }
   };
 
@@ -204,6 +231,20 @@ const ItemDetailPage = () => {
     }
   };
 
+  const phoneLink = ownerContact?.phoneNumber ? `tel:${ownerContact.phoneNumber}` : undefined;
+  const telegramHandle = ownerContact?.telegramUsername
+    ? ownerContact.telegramUsername.startsWith('@')
+      ? ownerContact.telegramUsername
+      : `@${ownerContact.telegramUsername}`
+    : undefined;
+  const telegramLink = ownerContact?.telegramUsername
+    ? `https://t.me/${ownerContact.telegramUsername.replace(/^@/, '')}`
+    : undefined;
+  const whatsappDigits = ownerContact?.whatsappNumber?.replace(/[^0-9]/g, '') || '';
+  const whatsappLink = whatsappDigits ? `https://wa.me/${whatsappDigits}` : undefined;
+  const hasDirectContacts = Boolean(ownerContact && (ownerContact.phoneNumber || ownerContact.telegramUsername || ownerContact.whatsappNumber));
+  const isAuthenticated = Boolean(user);
+
   return (
     <Container maxWidth="lg">
       <Button
@@ -285,40 +326,104 @@ const ItemDetailPage = () => {
             )}
           </Box>
 
-          <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
-            <CardContent>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                {t.itemDetail.category}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                {item.category}
-              </Typography>
+          <Box sx={{ mb: 1.5 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              {t.itemDetail.description}
+            </Typography>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+              {item.description}
+            </Typography>
+          </Box>
 
-              {item.tags && item.tags.length > 0 && (
-                <>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    {t.itemDetail.tags}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {t.itemDetail.publishDate || 'Published'}: {item.createdAt?.toLocaleDateString?.() || ''}
+          </Typography>
+
+          {isAuthenticated ? (
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              disabled={item.status === 'sold'}
+              onClick={handleAuthAndInquiry}
+              sx={{ mb: 2 }}
+            >
+              {item.status === 'sold' ? t.status.sold : t.itemDetail.inquireAbout}
+            </Button>
+          ) : (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  {t.itemDetail.authRequiredMessage}
+                </Typography>
+                <Button variant="contained" onClick={handleAuthAndInquiry}>
+                  {t.auth.signIn}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {t.itemDetail.directContactTitle}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t.itemDetail.directContactHint}
+              </Typography>
+              {isAuthenticated ? (
+                hasDirectContacts ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {ownerContact?.phoneNumber && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<PhoneIcon />}
+                      component="a"
+                      href={phoneLink}
+                      sx={{ justifyContent: 'flex-start' }}
+                    >
+                      {t.profile.phoneLabel}: {ownerContact.phoneNumber}
+                    </Button>
+                  )}
+                  {ownerContact?.telegramUsername && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<TelegramIcon />}
+                      component="a"
+                      href={telegramLink}
+                      target="_blank"
+                      rel="noopener"
+                      sx={{ justifyContent: 'flex-start' }}
+                    >
+                      {t.profile.telegramLabel}: {telegramHandle}
+                    </Button>
+                  )}
+                  {ownerContact?.whatsappNumber && whatsappLink && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<WhatsAppIcon />}
+                      component="a"
+                      href={whatsappLink}
+                      target="_blank"
+                      rel="noopener"
+                      sx={{ justifyContent: 'flex-start' }}
+                    >
+                      {t.profile.whatsappLabel}: {ownerContact.whatsappNumber}
+                    </Button>
+                  )}
+                </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    {t.itemDetail.noDirectContacts}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {item.tags.map((tag, idx) => (
-                      <Chip key={idx} label={tag} size="small" variant="outlined" />
-                    ))}
-                  </Box>
-                </>
+                )
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  {t.itemDetail.authRequiredContacts}
+                </Typography>
               )}
             </CardContent>
           </Card>
-
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            disabled={item.status === 'sold'}
-            onClick={handleAuthAndInquiry}
-            sx={{ mb: 2 }}
-          >
-            {item.status === 'sold' ? t.status.sold : t.itemDetail.inquireAbout}
-          </Button>
 
           <Typography variant="caption" color="text.secondary">
             {t.common.views}: {item.views || 0}

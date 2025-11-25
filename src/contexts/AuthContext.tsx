@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../config/firebase';
 import { UserProfile } from '../types';
 
@@ -37,7 +37,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubscribeProfile: (() => void) | null = null;
+
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       setUser(firebaseUser);
 
       if (!firebaseUser) {
@@ -49,6 +56,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const profile = await loadOrCreateUserProfile(firebaseUser);
         setUserProfile(profile);
+
+        const profileRef = doc(db, 'users', firebaseUser.uid);
+        unsubscribeProfile = onSnapshot(profileRef, async (snapshot) => {
+          if (!snapshot.exists()) {
+            return;
+          }
+
+          try {
+            const data = snapshot.data() as UserProfile & { createdAt?: any };
+            const normalizedCreatedAt = data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt;
+            const controlsSnap = await getDoc(doc(db, 'userControls', firebaseUser.uid));
+            const controlsData = controlsSnap.exists() ? controlsSnap.data() : {};
+
+            setUserProfile({
+              ...data,
+              createdAt: normalizedCreatedAt,
+              blockedFromPosting: Boolean(controlsData.blockedFromPosting),
+            });
+          } catch (error) {
+            console.error('Error processing user profile snapshot:', error);
+          }
+        });
       } catch (error) {
         console.error('Error loading user profile:', error);
         setUserProfile(null);
@@ -57,7 +86,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    return unsubscribe;
+    return () => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+      unsubscribe();
+    };
   }, []);
 
   const loadOrCreateUserProfile = async (firebaseUser: User): Promise<UserProfile> => {

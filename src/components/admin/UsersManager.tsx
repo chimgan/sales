@@ -56,6 +56,8 @@ const UsersManager = () => {
     displayName: '',
     email: '',
     phoneNumber: '',
+    telegramUsername: '',
+    whatsappNumber: '',
     language: 'en' as LanguageCode,
     blockedFromPosting: false,
   });
@@ -137,6 +139,8 @@ const UsersManager = () => {
       displayName: user.displayName,
       email: user.email,
       phoneNumber: user.phoneNumber || '',
+      telegramUsername: user.telegramUsername || '',
+      whatsappNumber: user.whatsappNumber || '',
       language: (user.language || language) as LanguageCode,
       blockedFromPosting: Boolean(user.blockedFromPosting),
     });
@@ -155,6 +159,8 @@ const UsersManager = () => {
       await updateDoc(doc(db, 'users', selectedUser.uid), {
         displayName: formData.displayName,
         phoneNumber: formData.phoneNumber || null,
+        telegramUsername: formData.telegramUsername || null,
+        whatsappNumber: formData.whatsappNumber || null,
         language: formData.language,
         blockedFromPosting: formData.blockedFromPosting,
       });
@@ -262,6 +268,24 @@ const UsersManager = () => {
                 fullWidth
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label={t.profile.telegramLabel}
+                fullWidth
+                value={formData.telegramUsername}
+                onChange={(e) => setFormData((prev) => ({ ...prev, telegramUsername: e.target.value }))}
+                placeholder="@username"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label={t.profile.whatsappLabel}
+                fullWidth
+                value={formData.whatsappNumber}
+                onChange={(e) => setFormData((prev) => ({ ...prev, whatsappNumber: e.target.value }))}
+                placeholder="+90555..."
               />
             </Grid>
             <Grid item xs={12}>
