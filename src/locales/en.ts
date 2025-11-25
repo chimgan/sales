@@ -81,6 +81,7 @@ export const en: TranslationKeys = {
     tags: 'Tags',
     inquiries: 'Inquiries',
     analytics: 'Analytics',
+    users: 'Users',
     // Common actions
     add: 'Add',
     edit: 'Edit',
@@ -125,10 +126,22 @@ export const en: TranslationKeys = {
     manageCategories: 'Manage Categories',
     manageTags: 'Manage Tags',
     customerInquiries: 'Customer Inquiries',
+    manageUsers: 'Manage Users',
     dailyLimitTitle: 'Daily Ad Limit',
     dailyLimitDescription: 'Set how many advertisements a registered user can create per day.',
     dailyLimitPlaceholder: 'Enter limit (e.g., 3)',
     dailyLimitSaved: 'Daily ad limit updated',
+    searchUsersPlaceholder: 'Search by name or email',
+    editUser: 'Edit User',
+    userDetails: 'User Details',
+    phoneNumber: 'Phone Number',
+    languageLabel: 'Language',
+    postingAccess: 'Posting Permissions',
+    postingAllowed: 'Allowed to create ads',
+    postingBlockedLabel: 'Posting blocked',
+    userUpdated: 'User updated',
+    blockedBadge: 'Blocked',
+    activeBadge: 'Active',
     // Table headers
     image: 'Image',
     date: 'Date',
@@ -190,6 +203,12 @@ export const en: TranslationKeys = {
     EUR: 'Euro (€)',
     RUB: 'Russian Ruble (₽)',
     label: 'Currency',
+  },
+
+  languageNames: {
+    en: 'English',
+    ru: 'Russian',
+    tr: 'Turkish',
   },
 
   // Item Detail Page
@@ -263,6 +282,7 @@ export const en: TranslationKeys = {
     itemLabel: 'Item',
     lastMessageAt: 'Last message',
     newMessageNotification: 'New message in {item}',
+    postingBlockedMessage: 'Your account is currently restricted from creating new advertisements. Please contact support if you believe this is a mistake.',
   },
 
   messages: {

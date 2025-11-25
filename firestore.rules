@@ -2,10 +2,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == "kovtunovvladislav@gmail.com";
+    }
+
     // Users collection
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+    }
+
+    // User controls (admin-enforced flags, e.g., posting blocks)
+    match /userControls/{userId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
     }
     
     // Items collection - public read, open write for development
@@ -31,6 +41,11 @@ service cloud.firestore {
       allow read: if true; // Allow reading for admin panel
       allow create: if true;
       allow update, delete: if true; // TODO: Secure for production
+    }
+    
+    // Daily limits
+    match /settings/general {
+      allow read, write: if true;            // or `if request.auth != null`
     }
   }
 }

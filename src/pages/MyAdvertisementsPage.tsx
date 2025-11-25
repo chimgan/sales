@@ -69,7 +69,7 @@ type FormState = {
 type InputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 const MyAdvertisementsPage = () => {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, userProfile, signInWithGoogle } = useAuth();
   const { t } = useLanguage();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -419,6 +419,11 @@ const MyAdvertisementsPage = () => {
   const handleSubmit = async () => {
     if (!user) return;
 
+    if (isPostingBlocked) {
+      enqueueSnackbar(t.myAds.postingBlockedMessage, { variant: 'warning' });
+      return;
+    }
+
     if (!formData.title || !formData.price || !formData.category) {
       enqueueSnackbar(t.myAds.formRequired, { variant: 'warning' });
       return;
@@ -527,12 +532,19 @@ const MyAdvertisementsPage = () => {
       ? t.myAds.dailyUsage.replace('{count}', String(todayCount)).replace('{limit}', String(dailyLimit))
       : null;
   const isLimitReached = dailyLimit !== null && todayCount >= dailyLimit;
+  const isPostingBlocked = Boolean(userProfile?.blockedFromPosting);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight={700} gutterBottom>
         {t.myAds.title}
       </Typography>
+
+      {isPostingBlocked && tabValue === 'listings' && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {t.myAds.postingBlockedMessage}
+        </Alert>
+      )}
 
       {limitInfoText && (
         <Box sx={{ mb: 2 }}>
@@ -716,7 +728,12 @@ const MyAdvertisementsPage = () => {
                     )}
                   </Grid>
                   <Grid item xs={12}>
-                    <Button variant="contained" fullWidth onClick={handleSubmit} disabled={saving || isLimitReached}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={handleSubmit}
+                      disabled={saving || isLimitReached || isPostingBlocked}
+                    >
                       {saving ? <CircularProgress size={24} color="inherit" /> : t.myAds.formSubmitCreate}
                     </Button>
                   </Grid>

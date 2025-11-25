@@ -83,6 +83,12 @@ export const tr: TranslationKeys = {
     label: 'Para Birimi',
   },
 
+  languageNames: {
+    en: 'İngilizce',
+    ru: 'Rusça',
+    tr: 'Türkçe',
+  },
+
   // Item Detail Page
   itemDetail: {
     status: 'Durum',
@@ -154,6 +160,7 @@ export const tr: TranslationKeys = {
     itemLabel: 'Ürün',
     lastMessageAt: 'Son mesaj',
     newMessageNotification: '{item} ilanında yeni mesaj',
+    postingBlockedMessage: 'Hesabınız şu anda yeni ilan oluşturmaya kapatıldı. Bunun bir hata olduğunu düşünüyorsanız lütfen destekle iletişime geçin.',
   },
 
   messages: {
@@ -177,6 +184,7 @@ export const tr: TranslationKeys = {
     tags: 'Etiketler',
     inquiries: 'Sorgular',
     analytics: 'Analitik',
+    users: 'Kullanıcılar',
     // Common actions
     add: 'Ekle',
     edit: 'Düzenle',
@@ -221,10 +229,22 @@ export const tr: TranslationKeys = {
     manageCategories: 'Kategorileri Yönet',
     manageTags: 'Etiketleri Yönet',
     customerInquiries: 'Müşteri Sorguları',
+    manageUsers: 'Kullanıcıları Yönet',
     dailyLimitTitle: 'Günlük İlan Limiti',
     dailyLimitDescription: 'Kayıtlı bir kullanıcının günde kaç ilan oluşturabileceğini ayarlayın.',
     dailyLimitPlaceholder: 'Limit girin (ör. 3)',
     dailyLimitSaved: 'Günlük ilan limiti güncellendi',
+    searchUsersPlaceholder: 'Ada veya e-postaya göre ara',
+    editUser: 'Kullanıcıyı Düzenle',
+    userDetails: 'Kullanıcı Bilgileri',
+    phoneNumber: 'Telefon Numarası',
+    languageLabel: 'Dil',
+    postingAccess: 'Yayın İzinleri',
+    postingAllowed: 'İlan oluşturmasına izin ver',
+    postingBlockedLabel: 'Yayın engelli',
+    userUpdated: 'Kullanıcı güncellendi',
+    blockedBadge: 'Engelli',
+    activeBadge: 'Aktif',
     // Table headers
     image: 'Resim',
     date: 'Tarih',

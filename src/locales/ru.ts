@@ -80,6 +80,12 @@ export const ru = {
     label: 'Валюта',
   },
 
+  languageNames: {
+    en: 'Английский',
+    ru: 'Русский',
+    tr: 'Турецкий',
+  },
+
   // Item Detail Page
   itemDetail: {
     status: 'Статус',
@@ -151,6 +157,7 @@ export const ru = {
     itemLabel: 'Товар',
     lastMessageAt: 'Последнее сообщение',
     newMessageNotification: 'Новое сообщение в {item}',
+    postingBlockedMessage: 'Ваш аккаунт временно ограничен и не может создавать новые объявления. Если это ошибка, свяжитесь с поддержкой.',
   },
 
   messages: {
@@ -168,6 +175,7 @@ export const ru = {
     tags: 'Теги',
     inquiries: 'Запросы',
     analytics: 'Аналитика',
+    users: 'Пользователи',
     login: 'Вход администратора',
     email: 'Email',
     password: 'Пароль',
@@ -217,10 +225,22 @@ export const ru = {
     manageCategories: 'Управление категориями',
     manageTags: 'Управление тегами',
     customerInquiries: 'Запросы клиентов',
+    manageUsers: 'Управление пользователями',
     dailyLimitTitle: 'Дневной лимит объявлений',
     dailyLimitDescription: 'Установите, сколько объявлений зарегистрированный пользователь может создавать в день.',
     dailyLimitPlaceholder: 'Введите лимит (например, 3)',
     dailyLimitSaved: 'Дневной лимит обновлён',
+    searchUsersPlaceholder: 'Поиск по имени или email',
+    editUser: 'Редактировать пользователя',
+    userDetails: 'Данные пользователя',
+    phoneNumber: 'Телефон',
+    languageLabel: 'Язык',
+    postingAccess: 'Права на публикацию',
+    postingAllowed: 'Разрешено создавать объявления',
+    postingBlockedLabel: 'Публикация заблокирована',
+    userUpdated: 'Пользователь обновлён',
+    blockedBadge: 'Заблокирован',
+    activeBadge: 'Активен',
     // Table headers
     image: 'Изображение',
     date: 'Дата',

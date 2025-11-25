@@ -69,4 +69,5 @@ export interface UserProfile {
   inquiries: string[];
   createdAt: Date;
   language?: 'ru' | 'en' | 'tr';
+  blockedFromPosting?: boolean;
 }

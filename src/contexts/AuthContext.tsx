@@ -37,35 +37,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      setUser(user);
-      if (user) {
-        const profileRef = doc(db, 'users', user.uid);
-        const profileSnap = await getDoc(profileRef);
-        
-        if (profileSnap.exists()) {
-          setUserProfile(profileSnap.data() as UserProfile);
-        } else {
-          // Create new profile
-          const newProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || 'Anonymous',
-            photoURL: user.photoURL || undefined,
-            inquiries: [],
-            createdAt: new Date(),
-          };
-          await setDoc(profileRef, newProfile);
-          setUserProfile(newProfile);
-        }
-      } else {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      setUser(firebaseUser);
+
+      if (!firebaseUser) {
         setUserProfile(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const profile = await loadOrCreateUserProfile(firebaseUser);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+        setUserProfile(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return unsubscribe;
   }, []);
+
+  const loadOrCreateUserProfile = async (firebaseUser: User): Promise<UserProfile> => {
+    const profileRef = doc(db, 'users', firebaseUser.uid);
+    const profileSnap = await getDoc(profileRef);
+
+    let profileData: UserProfile;
+
+    if (profileSnap.exists()) {
+      const data = profileSnap.data() as UserProfile;
+      profileData = {
+        ...data,
+        createdAt: (data.createdAt as unknown as Date)?.toString ? (data.createdAt as unknown as any).toDate?.() ?? data.createdAt : data.createdAt,
+      };
+    } else {
+      profileData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        displayName: firebaseUser.displayName || 'Anonymous',
+        photoURL: firebaseUser.photoURL ?? null,
+        inquiries: [],
+        createdAt: new Date(),
+      };
+      await setDoc(profileRef, profileData);
+    }
+
+    const controlsSnap = await getDoc(doc(db, 'userControls', firebaseUser.uid));
+    const controlsData = controlsSnap.exists() ? controlsSnap.data() : {};
+
+    return {
+      ...profileData,
+      blockedFromPosting: Boolean(controlsData.blockedFromPosting),
+    };
+  };
 
   const signInWithGoogle = async () => {
     try {
@@ -94,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
+      await loadOrCreateUserProfile(userCredential.user);
     } catch (error) {
       console.error('Error signing up with email:', error);
       throw error;
