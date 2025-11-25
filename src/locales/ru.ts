@@ -71,6 +71,7 @@ export const ru = {
     onSale: 'В продаже',
     reserved: 'Зарезервировано',
     sold: 'Продано',
+    pending: 'На модерации',
   },
 
   // Currencies
@@ -117,6 +118,7 @@ export const ru = {
     publishDate: 'Опубликовано',
     authRequiredMessage: 'Войдите, чтобы написать продавцу и управлять запросами.',
     authRequiredContacts: 'Войдите, чтобы увидеть прямые контакты продавца.',
+    pendingApprovalMessage: 'Это объявление ещё не прошло модерацию и скоро будет доступно.',
   },
 
   // Profile Page
@@ -188,6 +190,11 @@ export const ru = {
     unreadBadge: 'НОВОЕ',
     hideConversation: 'Скрыть переписку',
     conversationHidden: 'Переписка скрыта',
+    pendingInfoTitle: 'Объявление на проверке',
+    pendingInfoDescription: 'После одобрения модератором объявление появится в поиске и на главной странице.',
+    moderatorNoteLabel: 'Сообщение модератора',
+    moderatorNoteEmpty: 'Модератор не оставил комментарий.',
+    resubmittedForReview: 'Любые изменения отправят объявление на повторную модерацию.',
   },
 
   messages: {
@@ -206,6 +213,7 @@ export const ru = {
     inquiries: 'Запросы',
     analytics: 'Аналитика',
     users: 'Пользователи',
+    moderation: 'Модерация',
     login: 'Вход администратора',
     email: 'Email',
     password: 'Пароль',
@@ -220,6 +228,8 @@ export const ru = {
     actions: 'Действия',
     search: 'Поиск',
     filter: 'Фильтр',
+    statusFilter: 'Фильтр по статусу',
+    allStatusesOption: 'Все статусы',
     // Item fields
     title: 'Название',
     description: 'Описание',
@@ -302,6 +312,7 @@ export const ru = {
     errorLoadingData: 'Ошибка загрузки данных',
     errorDeleting: 'Ошибка удаления',
     deletedSuccessfully: 'Успешно удалено',
+    nothingFound: 'Нет объявлений по заданным условиям',
     // Actions
     update: 'Обновить',
     create: 'Создать',
@@ -316,6 +327,21 @@ export const ru = {
     itemsByCategory: 'Товары по категориям',
     topViewedItems: 'Топ 5 просматриваемых товаров',
     fillAllFields: 'Пожалуйста, заполните все поля',
+    moderationQueueTitle: 'Очередь модерации объявлений',
+    pendingApproval: 'На модерации',
+    review: 'Проверить',
+    reviewDetails: 'Проверка объявления',
+    moderationMessageLabel: 'Сообщение автору',
+    moderationMessagePlaceholder: 'Опишите, какие изменения нужны...',
+    moderationMessageRequired: 'Добавьте сообщение для автора',
+    requestChanges: 'Запросить изменения',
+    approve: 'Опубликовать',
+    publishSuccess: 'Объявление опубликовано',
+    noteSaved: 'Сообщение отправлено',
+    saveEdits: 'Сохранить изменения',
+    editsSaved: 'Изменения сохранены',
+    moderationEmptyState: 'Нет объявлений, ожидающих проверки.',
+    deleteAd: 'Удалить объявление',
   },
 
   // Common

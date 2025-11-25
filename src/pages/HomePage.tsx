@@ -105,7 +105,8 @@ const HomePage = () => {
         createdAt: doc.data().createdAt?.toDate(),
         updatedAt: doc.data().updatedAt?.toDate(),
       })) as Item[];
-      setItems(itemsData);
+      const visibleItems = itemsData.filter((item) => item.status !== 'pending');
+      setItems(visibleItems);
 
       // Fetch categories
       const categoriesSnapshot = await getDocs(collection(db, 'categories'));

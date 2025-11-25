@@ -84,6 +84,7 @@ export const en: TranslationKeys = {
     inquiries: 'Inquiries',
     analytics: 'Analytics',
     users: 'Users',
+    moderation: 'Moderation',
     // Common actions
     add: 'Add',
     edit: 'Edit',
@@ -93,6 +94,8 @@ export const en: TranslationKeys = {
     actions: 'Actions',
     search: 'Search',
     filter: 'Filter',
+    statusFilter: 'Status filter',
+    allStatusesOption: 'All statuses',
     // Item fields
     title: 'Title',
     description: 'Description',
@@ -175,6 +178,7 @@ export const en: TranslationKeys = {
     errorLoadingData: 'Error loading data',
     errorDeleting: 'Error deleting',
     deletedSuccessfully: 'Deleted successfully',
+    nothingFound: 'No items match the filter',
     // Actions
     update: 'Update',
     create: 'Create',
@@ -189,6 +193,21 @@ export const en: TranslationKeys = {
     itemsByCategory: 'Items by Category',
     topViewedItems: 'Top 5 Most Viewed Items',
     fillAllFields: 'Please fill in all fields',
+    moderationQueueTitle: 'Ad Moderation Queue',
+    pendingApproval: 'Pending Approval',
+    review: 'Review',
+    reviewDetails: 'Review Advertisement',
+    moderationMessageLabel: 'Message to author',
+    moderationMessagePlaceholder: 'Describe required changes...',
+    moderationMessageRequired: 'Please provide a note for the author',
+    requestChanges: 'Request changes',
+    approve: 'Publish',
+    publishSuccess: 'Advertisement published',
+    noteSaved: 'Message saved for the author',
+    saveEdits: 'Save edits',
+    editsSaved: 'Changes saved',
+    moderationEmptyState: 'No advertisements waiting for review.',
+    deleteAd: 'Delete advertisement',
   },
 
   // Item statuses
@@ -196,6 +215,7 @@ export const en: TranslationKeys = {
     onSale: 'On Sale',
     reserved: 'Reserved',
     sold: 'Sold',
+    pending: 'Pending Approval',
   },
 
   // Currencies
@@ -240,6 +260,7 @@ export const en: TranslationKeys = {
     directContactHint: 'These optional channels are provided by the seller for quicker replies.',
     noDirectContacts: 'The seller has not shared direct contact details yet.',
     publishDate: 'Published',
+    pendingApprovalMessage: 'This advertisement is awaiting moderation and will be visible once approved.',
     authRequiredMessage: 'Sign in to message the seller and manage inquiries.',
     authRequiredContacts: 'Sign in to view the seller’s direct contact details.',
   },
@@ -313,6 +334,11 @@ export const en: TranslationKeys = {
     unreadBadge: 'NEW',
     hideConversation: 'Hide conversation',
     conversationHidden: 'Conversation hidden',
+    pendingInfoTitle: 'Your advertisement is under review',
+    pendingInfoDescription: 'Once a moderator approves it, the listing will appear in search results and on the homepage.',
+    moderatorNoteLabel: 'Moderator note',
+    moderatorNoteEmpty: 'No moderator feedback yet.',
+    resubmittedForReview: 'Any edits will send the listing back to moderation.',
   },
 
   messages: {

@@ -73,7 +73,6 @@ type FormState = {
   location: string;
   district: string;
   useDropdown: boolean;
-  status: ItemStatus;
 };
 
 type InputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -118,7 +117,6 @@ const MyAdvertisementsPage = () => {
     location: '',
     district: '',
     useDropdown: true,
-    status: 'on_sale',
   };
 
   const [formData, setFormData] = useState<FormState>({ ...defaultFormState });
@@ -136,6 +134,8 @@ const MyAdvertisementsPage = () => {
 
   const resolveStatusLabel = (status: ItemStatus = 'on_sale') => {
     switch (status) {
+      case 'pending':
+        return t.status.pending;
       case 'sold':
         return t.status.sold;
       case 'reserved':
@@ -167,6 +167,8 @@ const MyAdvertisementsPage = () => {
 
   const resolveStatusColor = (status: ItemStatus = 'on_sale') => {
     switch (status) {
+      case 'pending':
+        return 'warning';
       case 'sold':
         return 'error';
       case 'reserved':
@@ -288,7 +290,6 @@ const MyAdvertisementsPage = () => {
         ? item.location.split(' - ')[1] || ''
         : '',
       useDropdown: item.location?.startsWith('Mersin') ?? true,
-      status: item.status || 'on_sale',
     });
     setImageFiles([]);
     setExistingImages(item.images || []);
@@ -611,40 +612,45 @@ const MyAdvertisementsPage = () => {
         return;
       }
 
-      const payload: Record<string, unknown> = {
+      const basePayload: Record<string, unknown> = {
         title: formData.title,
         description: formData.description,
         price: priceValue,
         currency: formData.currency,
         category: formData.category,
         tags: formData.tags,
-        status: formData.status,
         images: combinedImages,
         location: locationStr.trim(),
-        views: 0,
-        createdAt: now,
-        updatedAt: now,
-        createdBy: user.uid,
-        creatorName: user.displayName || user.email || 'User',
       };
 
       if (formData.discountPrice) {
         const discountValue = parseFloat(formData.discountPrice);
         if (!Number.isNaN(discountValue)) {
-          payload.discountPrice = discountValue;
+          basePayload.discountPrice = discountValue;
         }
       }
 
       if (editingItem) {
-        delete payload.views;
-        delete payload.createdAt;
         await updateDoc(doc(db, 'items', editingItem.id), {
-          ...payload,
+          ...basePayload,
           updatedAt: now,
+          status: 'pending',
+          approvedAt: null,
+          moderationNote: null,
         });
         enqueueSnackbar(t.myAds.updateSuccess, { variant: 'success' });
       } else {
-        await addDoc(collection(db, 'items'), payload);
+        await addDoc(collection(db, 'items'), {
+          ...basePayload,
+          views: 0,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: user.uid,
+          creatorName: user.displayName || user.email || 'User',
+          status: 'pending' as ItemStatus,
+          approvedAt: null,
+          moderationNote: null,
+        });
         enqueueSnackbar(t.myAds.saveSuccess, { variant: 'success' });
       }
 

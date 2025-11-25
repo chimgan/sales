@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -27,6 +27,7 @@ import {
   SelectChangeEvent,
   FormControlLabel,
   Checkbox,
+  ChipProps,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
@@ -42,6 +43,7 @@ const ItemsManager = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | ItemStatus>('all');
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,25 @@ const ItemsManager = () => {
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const mersinDistricts = getMersinDistricts();
+
+  const filteredItems = useMemo(() => {
+    if (statusFilter === 'all') return items;
+    return items.filter((item) => item.status === statusFilter);
+  }, [items, statusFilter]);
+
+  const getStatusChipColor = (status: ItemStatus): ChipProps['color'] => {
+    switch (status) {
+      case 'pending':
+        return 'info';
+      case 'reserved':
+        return 'warning';
+      case 'sold':
+        return 'error';
+      case 'on_sale':
+      default:
+        return 'success';
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -294,11 +315,38 @@ const ItemsManager = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
         <Typography variant="h4">{t.admin.manageItems}</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
-          {t.admin.addItem}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            select
+            size="small"
+            label={t.admin.statusFilter}
+            value={statusFilter}
+            onChange={(e: SelectChangeEvent<string>) =>
+              setStatusFilter(e.target.value as ItemStatus | 'all')
+            }
+            sx={{ minWidth: 180 }}
+          >
+            <MenuItem value="all">{t.admin.allStatusesOption}</MenuItem>
+            <MenuItem value="pending">{t.status.pending}</MenuItem>
+            <MenuItem value="on_sale">{t.status.onSale}</MenuItem>
+            <MenuItem value="reserved">{t.status.reserved}</MenuItem>
+            <MenuItem value="sold">{t.status.sold}</MenuItem>
+          </TextField>
+          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
+            {t.admin.addItem}
+          </Button>
+        </Box>
       </Box>
 
       <Box sx={{ mb: 4, p: 3, borderRadius: 2, bgcolor: 'background.paper', boxShadow: 1 }}>
@@ -340,43 +388,51 @@ const ItemsManager = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <img
-                    src={item.images[0] || 'https://via.placeholder.com/50'}
-                    alt={item.title}
-                    style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }}
-                  />
-                </TableCell>
-                <TableCell>{item.title}</TableCell>
-                <TableCell>
-                  {item.discountPrice ? (
-                    <>
-                      {formatPrice(item.discountPrice, item.currency || 'USD')}{' '}
-                      <span style={{ textDecoration: 'line-through', color: '#999' }}>
-                        {formatPrice(item.price, item.currency || 'USD')}
-                      </span>
-                    </>
-                  ) : (
-                    formatPrice(item.price, item.currency || 'USD')
-                  )}
-                </TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>
-                  <Chip label={item.status} size="small" />
-                </TableCell>
-                <TableCell>{item.views || 0}</TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleOpenDialog(item)} color="primary" size="small">
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(item.id)} color="error" size="small">
-                    <Delete />
-                  </IconButton>
+            {filteredItems.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Typography color="text.secondary">{t.admin.nothingFound}</Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <img
+                      src={item.images[0] || 'https://via.placeholder.com/50'}
+                      alt={item.title}
+                      style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }}
+                    />
+                  </TableCell>
+                  <TableCell>{item.title}</TableCell>
+                  <TableCell>
+                    {item.discountPrice ? (
+                      <>
+                        {formatPrice(item.discountPrice, item.currency || 'USD')}{' '}
+                        <span style={{ textDecoration: 'line-through', color: '#999' }}>
+                          {formatPrice(item.price, item.currency || 'USD')}
+                        </span>
+                      </>
+                    ) : (
+                      formatPrice(item.price, item.currency || 'USD')
+                    )}
+                  </TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>
+                    <Chip label={item.status} size="small" color={getStatusChipColor(item.status) as any} />
+                  </TableCell>
+                  <TableCell>{item.views || 0}</TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenDialog(item)} color="primary" size="small">
+                      <Edit />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(item.id)} color="error" size="small">
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>

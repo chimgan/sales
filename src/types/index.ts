@@ -1,4 +1,4 @@
-export type ItemStatus = 'on_sale' | 'reserved' | 'sold';
+export type ItemStatus = 'pending' | 'on_sale' | 'reserved' | 'sold';
 export type Currency = 'TRY' | 'USD' | 'EUR' | 'RUB';
 
 export interface Item {
@@ -18,6 +18,8 @@ export interface Item {
   createdBy?: string;
   creatorName?: string;
   location?: string;
+  moderationNote?: string | null;
+  approvedAt?: Date;
 }
 
 export interface Category {
