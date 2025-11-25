@@ -43,6 +43,10 @@ const HomePage = () => {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const districts = getMersinDistricts();
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('hideWelcomeBanner') !== 'true';
+  });
 
   useEffect(() => {
     fetchData();
@@ -145,7 +149,7 @@ const HomePage = () => {
           {t.home.subtitle}
         </Typography>
 
-        {!user && (
+        {!user && showWelcome && (
           <Paper
             elevation={0}
             sx={{
@@ -155,8 +159,26 @@ const HomePage = () => {
               bgcolor: 'primary.light',
               color: 'primary.contrastText',
               borderRadius: 2,
+              position: 'relative',
             }}
           >
+            <Button
+              onClick={() => {
+                setShowWelcome(false);
+                localStorage.setItem('hideWelcomeBanner', 'true');
+              }}
+              size="small"
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                color: 'primary.contrastText',
+                textTransform: 'none',
+                opacity: 0.8,
+              }}
+            >
+              {t.common.close}
+            </Button>
             <Typography variant="h6" gutterBottom>
               {t.home.welcomeTitle}
             </Typography>
