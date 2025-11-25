@@ -50,6 +50,8 @@ export interface Inquiry {
   lastMessageText?: string;
   lastMessageAt?: Date;
   participants?: string[];
+  hiddenFor?: string[];
+  unreadFor?: string[];
 }
 
 export interface InquiryMessage {

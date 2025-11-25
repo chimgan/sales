@@ -283,6 +283,13 @@ export const en: TranslationKeys = {
     lastMessageAt: 'Last message',
     newMessageNotification: 'New message in {item}',
     postingBlockedMessage: 'Your account is currently restricted from creating new advertisements. Please contact support if you believe this is a mistake.',
+    markAsSold: 'Mark as Sold',
+    markAsAvailable: 'Mark as Available',
+    markAsSoldSuccess: 'Listing marked as sold',
+    markAsAvailableSuccess: 'Listing reactivated',
+    unreadBadge: 'NEW',
+    hideConversation: 'Hide conversation',
+    conversationHidden: 'Conversation hidden',
   },
 
   messages: {

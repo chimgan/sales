@@ -1,4 +1,4 @@
-import { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Container,
   Box,
@@ -43,12 +43,14 @@ import {
   serverTimestamp,
   Unsubscribe,
   FirestoreError,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { useSnackbar } from 'notistack';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Item, Category, Tag, Currency, Inquiry, InquiryMessage } from '../types';
+import { Item, Category, Tag, Currency, Inquiry, InquiryMessage, ItemStatus } from '../types';
 import { getMersinDistricts } from '../data/locations';
 import { uploadMultipleToCloudinary } from '../utils/cloudinary';
 import { formatPrice } from '../utils/currency';
@@ -92,6 +94,8 @@ const MyAdvertisementsPage = () => {
   const conversationUnsubs = useRef<Unsubscribe[]>([]);
   const messagesUnsub = useRef<Unsubscribe | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [conversationActionLoading, setConversationActionLoading] = useState(false);
 
   const defaultFormState: FormState = {
     title: '',
@@ -109,6 +113,56 @@ const MyAdvertisementsPage = () => {
   const [formData, setFormData] = useState<FormState>({ ...defaultFormState });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const mersinDistricts = getMersinDistricts();
+  const currentUserId = user?.uid ?? '';
+  const unreadConversationCount = useMemo(
+    () => conversations.filter((conversation) => conversation.unreadFor?.includes(currentUserId)).length,
+    [conversations, currentUserId]
+  );
+  const conversationsTabLabel = unreadConversationCount
+    ? `${t.myAds.conversationsTab} (${unreadConversationCount})`
+    : t.myAds.conversationsTab;
+
+  const resolveStatusLabel = (status: ItemStatus = 'on_sale') => {
+    switch (status) {
+      case 'sold':
+        return t.status.sold;
+      case 'reserved':
+        return t.status.reserved;
+      default:
+        return t.status.onSale;
+    }
+  };
+
+  const handleUpdateItemStatus = async (itemId: string, nextStatus: ItemStatus) => {
+    try {
+      setStatusUpdatingId(itemId);
+      await updateDoc(doc(db, 'items', itemId), {
+        status: nextStatus,
+        updatedAt: serverTimestamp(),
+      });
+      await fetchUserItems();
+      enqueueSnackbar(
+        nextStatus === 'sold' ? t.myAds.markAsSoldSuccess : t.myAds.markAsAvailableSuccess,
+        { variant: 'success' }
+      );
+    } catch (error) {
+      console.error('Error updating item status:', error);
+      enqueueSnackbar(t.common.error, { variant: 'error' });
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
+  const resolveStatusColor = (status: ItemStatus = 'on_sale') => {
+    switch (status) {
+      case 'sold':
+        return 'error';
+      case 'reserved':
+        return 'warning';
+      default:
+        return 'success';
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -235,7 +289,9 @@ const MyAdvertisementsPage = () => {
       (a: Inquiry, b: Inquiry) => getConversationTimeValue(b) - getConversationTimeValue(a)
     );
 
-    setConversations(merged);
+    const visible = merged.filter((conversation) => !conversation.hiddenFor?.includes(currentUserId));
+
+    setConversations(visible);
     setConversationsLoading(false);
   };
 
@@ -270,6 +326,9 @@ const MyAdvertisementsPage = () => {
               createdAt: docData.createdAt?.toDate?.() ?? new Date(),
               updatedAt: docData.updatedAt?.toDate?.() ?? new Date(),
               lastMessageAt: docData.lastMessageAt?.toDate?.(),
+              hiddenFor: docData.hiddenFor || [],
+              unreadFor: docData.unreadFor || [],
+              participants: docData.participants || [],
             } as Inquiry;
           });
           conversationBuckets.current[bucketKey] = data;
@@ -381,12 +440,23 @@ const MyAdvertisementsPage = () => {
         createdAt: serverTimestamp(),
       });
 
-      await updateDoc(doc(db, 'inquiries', selectedConversationId), {
+      const otherParticipantIds =
+        selectedConversation?.participants?.filter(
+          (participantId): participantId is string => Boolean(participantId) && participantId !== currentUserId
+        ) || [];
+
+      const updatePayload: Record<string, unknown> = {
         lastMessageText: trimmed,
         lastMessageAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         status: 'contacted',
-      });
+      };
+
+      if (otherParticipantIds.length > 0) {
+        updatePayload.unreadFor = arrayUnion(...otherParticipantIds);
+      }
+
+      await updateDoc(doc(db, 'inquiries', selectedConversationId), updatePayload);
 
       setMessageInput('');
     } catch (error) {
@@ -413,8 +483,48 @@ const MyAdvertisementsPage = () => {
   const getConversationPreview = (conversation: Inquiry) =>
     conversation.lastMessageText || conversation.comment || '';
 
-  const selectedConversation =
-    conversations.find((conversation: Inquiry) => conversation.id === selectedConversationId) || null;
+  const markConversationAsRead = async (conversationId: string) => {
+    if (!currentUserId) return;
+    try {
+      await updateDoc(doc(db, 'inquiries', conversationId), {
+        unreadFor: arrayRemove(currentUserId),
+      });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  };
+
+  const handleHideConversation = async (conversationId: string) => {
+    if (!currentUserId) return;
+    try {
+      setConversationActionLoading(true);
+      await updateDoc(doc(db, 'inquiries', conversationId), {
+        hiddenFor: arrayUnion(currentUserId),
+      });
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null);
+        setMessages([]);
+      }
+      enqueueSnackbar(t.myAds.conversationHidden, { variant: 'success' });
+    } catch (error) {
+      console.error('Error hiding conversation:', error);
+      enqueueSnackbar(t.common.error, { variant: 'error' });
+    } finally {
+      setConversationActionLoading(false);
+    }
+  };
+
+  const selectedConversation = useMemo(
+    () => conversations.find((conversation: Inquiry) => conversation.id === selectedConversationId) || null,
+    [conversations, selectedConversationId]
+  );
+
+  useEffect(() => {
+    if (!selectedConversation || !currentUserId) return;
+    if (selectedConversation.unreadFor?.includes(currentUserId)) {
+      markConversationAsRead(selectedConversation.id);
+    }
+  }, [selectedConversation, currentUserId]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -565,7 +675,7 @@ const MyAdvertisementsPage = () => {
 
       <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label={t.myAds.listingsTab} value="listings" />
-        <Tab label={t.myAds.conversationsTab} value="conversations" />
+        <Tab label={conversationsTabLabel} value="conversations" />
       </Tabs>
 
       {tabValue === 'listings' ? (
@@ -755,6 +865,7 @@ const MyAdvertisementsPage = () => {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {userItems.map((item: Item) => {
                       const priceLabel = formatPrice(item.discountPrice ?? item.price, item.currency || 'USD');
+                      const isSold = item.status === 'sold';
                       return (
                         <Box
                           key={item.id}
@@ -782,6 +893,52 @@ const MyAdvertisementsPage = () => {
                           <Typography variant="caption" color="text.secondary">
                             {item.createdAt ? item.createdAt.toLocaleDateString() : ''}
                           </Typography>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: 1,
+                            }}
+                          >
+                            <Chip
+                              label={resolveStatusLabel(item.status)}
+                              color={resolveStatusColor(item.status)}
+                              size="small"
+                            />
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              {isSold ? (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="primary"
+                                  onClick={() => handleUpdateItemStatus(item.id, 'on_sale')}
+                                  disabled={statusUpdatingId === item.id}
+                                >
+                                  {statusUpdatingId === item.id ? (
+                                    <CircularProgress size={16} color="inherit" />
+                                  ) : (
+                                    t.myAds.markAsAvailable
+                                  )}
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="success"
+                                  onClick={() => handleUpdateItemStatus(item.id, 'sold')}
+                                  disabled={statusUpdatingId === item.id}
+                                >
+                                  {statusUpdatingId === item.id ? (
+                                    <CircularProgress size={16} color="inherit" />
+                                  ) : (
+                                    t.myAds.markAsSold
+                                  )}
+                                </Button>
+                              )}
+                            </Box>
+                          </Box>
                         </Box>
                       );
                     })}
@@ -811,31 +968,48 @@ const MyAdvertisementsPage = () => {
                   <List sx={{ maxHeight: 480, overflowY: 'auto' }}>
                     {conversations.map((conversation: Inquiry) => {
                       const partnerInfo = getConversationPartnerInfo(conversation);
+                      const isUnread = conversation.unreadFor?.includes(currentUserId);
                       return (
                         <ListItemButton
                           key={conversation.id}
                           selected={conversation.id === selectedConversationId}
                           onClick={() => handleSelectConversation(conversation.id)}
                           alignItems="flex-start"
-                          sx={{ flexDirection: 'column', alignItems: 'flex-start', borderRadius: 1, mb: 1 }}
+                          sx={{
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            borderRadius: 1,
+                            mb: 1,
+                            bgcolor: isUnread ? 'action.hover' : undefined,
+                          }}
                         >
-                          <ListItemText
-                            primary={conversation.itemTitle || t.myAds.itemLabel}
-                            secondary={
-                              <Box>
-                                <Typography variant="caption" color="text.secondary" display="block">
-                                  {partnerInfo.label}: {partnerInfo.name || t.common.loading}
-                                </Typography>
-                                <Typography variant="body2" color="text.primary" noWrap>
-                                  {getConversationPreview(conversation)}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {getConversationTimestamp(conversation)}
-                                </Typography>
-                              </Box>
-                            }
-                            primaryTypographyProps={{ fontWeight: 600 }}
-                          />
+                          <Box sx={{ width: '100%' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 1,
+                                mb: 0.5,
+                              }}
+                            >
+                              <Typography variant="subtitle1" fontWeight={isUnread ? 700 : 600} noWrap>
+                                {conversation.itemTitle || t.myAds.itemLabel}
+                              </Typography>
+                              {isUnread && (
+                                <Chip label={t.myAds.unreadBadge} size="small" color="primary" />
+                              )}
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {partnerInfo.label}: {partnerInfo.name || t.common.loading}
+                            </Typography>
+                            <Typography variant="body2" color="text.primary" noWrap>
+                              {getConversationPreview(conversation)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {getConversationTimestamp(conversation)}
+                            </Typography>
+                          </Box>
                         </ListItemButton>
                       );
                     })}
@@ -849,21 +1023,46 @@ const MyAdvertisementsPage = () => {
               <CardContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 480 }}>
                 {selectedConversation ? (
                   <>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="h6" fontWeight={600}>
-                        {selectedConversation.itemTitle || t.myAds.itemLabel}
-                      </Typography>
-                      {(() => {
-                        const partnerInfo = getConversationPartnerInfo(selectedConversation);
-                        return (
-                          <Typography variant="body2" color="text.secondary">
-                            {partnerInfo.label}: {partnerInfo.name || t.common.loading}
-                          </Typography>
-                        );
-                      })()}
-                      <Typography variant="caption" color="text.secondary">
-                        {t.myAds.lastMessageAt}: {getConversationTimestamp(selectedConversation)}
-                      </Typography>
+                    <Box
+                      sx={{
+                        mb: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        alignItems: { xs: 'flex-start', sm: 'center' },
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="h6" fontWeight={600}>
+                          {selectedConversation.itemTitle || t.myAds.itemLabel}
+                        </Typography>
+                        {(() => {
+                          const partnerInfo = getConversationPartnerInfo(selectedConversation);
+                          return (
+                            <Typography variant="body2" color="text.secondary">
+                              {partnerInfo.label}: {partnerInfo.name || t.common.loading}
+                            </Typography>
+                          );
+                        })()}
+                        <Typography variant="caption" color="text.secondary">
+                          {t.myAds.lastMessageAt}: {getConversationTimestamp(selectedConversation)}
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="text"
+                        color="inherit"
+                        size="small"
+                        onClick={() => handleHideConversation(selectedConversation.id)}
+                        disabled={conversationActionLoading}
+                        sx={{ alignSelf: 'flex-start' }}
+                      >
+                        {conversationActionLoading ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          t.myAds.hideConversation
+                        )}
+                      </Button>
                     </Box>
                     <Box
                       sx={{

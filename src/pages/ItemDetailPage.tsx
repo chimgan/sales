@@ -110,6 +110,8 @@ const ItemDetailPage = () => {
         status: 'new',
         lastMessageText: inquiryForm.comment,
         participants,
+        hiddenFor: [],
+        unreadFor: ownerId ? [ownerId] : [],
       };
 
       if (user?.uid) {

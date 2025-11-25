@@ -157,7 +157,14 @@ export const ru = {
     itemLabel: 'Товар',
     lastMessageAt: 'Последнее сообщение',
     newMessageNotification: 'Новое сообщение в {item}',
-    postingBlockedMessage: 'Ваш аккаунт временно ограничен и не может создавать новые объявления. Если это ошибка, свяжитесь с поддержкой.',
+    postingBlockedMessage: 'Ваш аккаунт временно не может размещать объявления. Свяжитесь с поддержкой, если это ошибка.',
+    markAsSold: 'Отметить как продано',
+    markAsAvailable: 'Сделать снова доступным',
+    markAsSoldSuccess: 'Объявление отмечено как проданное',
+    markAsAvailableSuccess: 'Объявление снова активно',
+    unreadBadge: 'НОВОЕ',
+    hideConversation: 'Скрыть переписку',
+    conversationHidden: 'Переписка скрыта',
   },
 
   messages: {
