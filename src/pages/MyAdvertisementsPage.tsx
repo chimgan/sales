@@ -1011,6 +1011,7 @@ const MyAdvertisementsPage = () => {
                     {userItems.map((item: Item) => {
                       const priceLabel = formatPrice(item.discountPrice ?? item.price, item.currency || 'USD');
                       const isSold = item.status === 'sold';
+                      const isPending = item.status === 'pending';
                       return (
                         <Box
                           key={item.id}
@@ -1068,19 +1069,21 @@ const MyAdvertisementsPage = () => {
                                   )}
                                 </Button>
                               ) : (
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  color="success"
-                                  onClick={() => handleUpdateItemStatus(item.id, 'sold')}
-                                  disabled={statusUpdatingId === item.id}
-                                >
-                                  {statusUpdatingId === item.id ? (
-                                    <CircularProgress size={16} color="inherit" />
-                                  ) : (
-                                    t.myAds.markAsSold
-                                  )}
-                                </Button>
+                                !isPending && (
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="success"
+                                    onClick={() => handleUpdateItemStatus(item.id, 'sold')}
+                                    disabled={statusUpdatingId === item.id}
+                                  >
+                                    {statusUpdatingId === item.id ? (
+                                      <CircularProgress size={16} color="inherit" />
+                                    ) : (
+                                      t.myAds.markAsSold
+                                    )}
+                                  </Button>
+                                )
                               )}
                               <Button
                                 size="small"
